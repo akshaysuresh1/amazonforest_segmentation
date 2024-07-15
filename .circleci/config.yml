@@ -16,6 +16,8 @@ jobs:
             pytest
 
   build:
+    docker:
+      - image: cimg/python:3.12.4  
     steps:
       - checkout
       - run:
@@ -25,6 +27,8 @@ jobs:
             # Replace with actual build commands if needed
 
   deploy:
+    docker:
+      - image: cimg/python:3.12.4
     steps:
       - checkout
       - run:
