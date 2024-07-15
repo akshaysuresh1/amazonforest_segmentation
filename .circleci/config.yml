@@ -1,0 +1,46 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: circleci/python:3.8  # Example using a Python image
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Run unit tests
+          command: |
+            pytest
+
+  build:
+    steps:
+      - checkout
+      - run:
+          name: Build artifact
+          command: |
+            echo "Building artifact..."
+            # Replace with actual build commands if needed
+
+  deploy:
+    steps:
+      - checkout
+      - run:
+          name: Deploy to production
+          command: |
+            echo "Deploying to production..."
+            # Replace with actual deployment commands if needed
+
+workflows:
+  version: 2
+  example:
+    jobs:
+      - test
+      - build:
+          requires:
+            - test
+      - deploy:
+          requires:
+            - build
