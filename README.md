@@ -8,4 +8,3 @@ Deploy a machine learning model to perform semantic segmentation of Amazon rainf
 pip install -e ".[dev]"
 ```
 
-2. Copy the `.env.example` file and rename it to `.env`. Then, provide the values for the environment variables in the file.
