@@ -44,7 +44,7 @@ workflows:
   example:
     jobs:
       - test
-          context: AWS access
+          context: AWS_access
       - build:
           requires:
             - test
