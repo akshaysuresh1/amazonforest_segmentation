@@ -11,6 +11,7 @@ jobs:
             python --version
             pip install --upgrade pip
             pip install -e ".[dev]"
+            echo $AWS_REGION_NAME
       - run:
           name: Run tests
           command: |
@@ -43,6 +44,7 @@ workflows:
   example:
     jobs:
       - test
+          context: AWS access
       - build:
           requires:
             - test

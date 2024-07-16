@@ -25,7 +25,7 @@ def test_get_aws_region_name_invalidname() -> None:
 
 def test_get_aws_region_name_valid() -> None:
     """
-    Tests that get_aws_region_name() responds correctly to a region specified in AWS_REGIONS_LIST
+    Tests whether get_aws_region_name() responds correctly to a region specified in AWS_REGIONS_LIST
     """
     mock_region = random.choice(AWS_REGIONS_LIST)
     with mock.patch("os.getenv", return_value=mock_region):
