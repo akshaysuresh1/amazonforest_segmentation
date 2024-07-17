@@ -19,32 +19,52 @@ def get_aws_region_name() -> str:
 
     aws_region_name = os.getenv("AWS_REGION_NAME")
     if aws_region_name is None:
-        raise ValueError("AWS region name is not set.")
+        raise ValueError("Environment variable AWS_REGION_NAME is undefined.")
     elif aws_region_name == "":
-        raise ValueError("AWS region name is empty.")
+        raise ValueError("Environment variable AWS_REGION_NAME is empty.")
     elif aws_region_name not in AWS_REGIONS_LIST:
         raise ValueError(
-            f"AWS region name '{aws_region_name}' is not valid or not supported."
+            f"Region name '{aws_region_name}' is not valid or not supported by AWS."
         )
 
     return aws_region_name
 
 
-def get_aws_access_key_id() -> str:
+def get_s3_access_key_id() -> str:
     """
-    Reads in AWS access key ID from environment variables.
+    Reads in S3 access key ID from environment variables.
 
     Returns:
-    str: AWS access key ID
+    str: S3 access key ID
 
     Raises:
-    ValueError: If AWS access key ID is empty or not set
+    ValueError: If S3 access key ID is empty or not set
     """
 
-    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-    if aws_access_key_id is None:
-        raise ValueError("AWS access key ID is not set.")
-    elif aws_access_key_id == "":
-        raise ValueError("AWS access key ID is empty.")
+    s3_access_key_id = os.getenv("S3_ACCESS_KEY_ID")
+    if s3_access_key_id is None:
+        raise ValueError("Environment variable S3_ACCESS_KEY_ID is undefined.")
+    elif s3_access_key_id == "":
+        raise ValueError("Environment variable S3_ACCESS_KEY_ID is empty.")
 
-    return aws_access_key_id
+    return s3_access_key_id
+
+
+def get_s3_secret_access_key() -> str:
+    """
+    Reads in S3 secret access key from environment variables.
+
+    Returns:
+    str: S3 secret access key
+
+    Raises:
+    ValueError: If S3 secret access key is empty or not set
+    """
+
+    s3_secret_access_key = os.getenv("S3_SECRET_ACCESS_KEY")
+    if s3_secret_access_key is None:
+        raise ValueError("Environment variable S3_SECRET_ACCESS_KEY is undefined.")
+    elif s3_secret_access_key == "":
+        raise ValueError("Environment variable S3_SECRET_ACCESS_KEY is empty.")
+
+    return s3_secret_access_key
