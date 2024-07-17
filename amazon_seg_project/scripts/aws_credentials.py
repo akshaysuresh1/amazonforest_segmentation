@@ -18,7 +18,11 @@ def get_aws_region_name() -> str:
     """
 
     aws_region_name = os.getenv("AWS_REGION_NAME")
-    if aws_region_name not in AWS_REGIONS_LIST:
+    if aws_region_name is None:
+        raise ValueError("AWS region name is not set.")
+    elif aws_region_name == "":
+        raise ValueError("AWS region name is empty.")
+    elif aws_region_name not in AWS_REGIONS_LIST:
         raise ValueError(
             f"AWS region name '{aws_region_name}' is not valid or not supported."
         )
