@@ -28,3 +28,23 @@ def get_aws_region_name() -> str:
         )
 
     return aws_region_name
+
+
+def get_aws_access_key_id() -> str:
+    """
+    Reads in AWS access key ID from environment variables.
+
+    Returns:
+    str: AWS access key ID
+
+    Raises:
+    ValueError: If AWS access key ID is empty or not set
+    """
+
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    if aws_access_key_id is None:
+        raise ValueError("AWS access key ID is not set.")
+    elif aws_access_key_id == "":
+        raise ValueError("AWS access key ID is empty.")
+
+    return aws_access_key_id
