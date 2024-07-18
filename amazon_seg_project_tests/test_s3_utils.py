@@ -104,13 +104,14 @@ def test_filter_object_keys_nocontents() -> None:
 def test_filter_object_keys_contents_only() -> None:
     """
     Test for the response of filter_object_keys() to multiple pages, each having a "Contents" keyword.
+    Pages contain keys to objects with different extensions.
     """
     pages_with_contents = [
-        {"Contents": [{"Key": "file1.tif"}, {"Key": "folder/"}, {"Key": "file2.tif"}]},
-        {"Contents": [{"Key": "file3.tif"}, {"Key": "file4.tif"}]},
+        {"Contents": [{"Key": "file1.tif"}, {"Key": "folder/"}, {"Key": "file2.txt"}]},
+        {"Contents": [{"Key": "file3.tif"}, {"Key": "file4.txt"}]},
     ]
-    expected_result = ["file1.tif", "file2.tif", "file3.tif", "file4.tif"]
-    assert expected_result == filter_object_keys(pages_with_contents)
+    expected_result = ["file1.tif", "file3.tif"]
+    assert expected_result == filter_object_keys(pages_with_contents, ".tif")
 
 
 def test_filter_object_keys_contents_mixed() -> None:
@@ -120,10 +121,10 @@ def test_filter_object_keys_contents_mixed() -> None:
     pages_mixed = [
         {"Contents": [{"Key": "file1.tif"}, {"Key": "folder/"}]},
         {"NoContents": [{"Key": "file_bogus.tif"}]},
-        {"Contents": [{"Key": "file2.tif"}]},
+        {"Contents": [{"Key": "file2.tif"}, {"Key": "file3.txt"}]},
     ]
     expected_result = ["file1.tif", "file2.tif"]
-    assert expected_result == filter_object_keys(pages_mixed)
+    assert expected_result == filter_object_keys(pages_mixed, ".tif")
 
 
 @patch("amazon_seg_project.scripts.s3_utils.initialize_s3_client")
@@ -151,13 +152,13 @@ def test_list_objects_success(
     mock_pages = [
         {"Contents": [{"Key": "file1.tif"}, {"Key": "folder/"}]},
         {"NoContents": [{"Key": "file_bogus.tif"}]},
-        {"Contents": [{"Key": "file2.tif"}]},
+        {"Contents": [{"Key": "file2.tif"}, {"Key": "file3.txt"}]},
     ]
     mock_paginator.paginate.return_value = iter(mock_pages)
     expected_result = ["file1.tif", "file2.tif"]
 
     # Call the test function.
-    result = list_objects(prefix="test_prefix")
+    result = list_objects(prefix="test_prefix", file_extension=".tif")
 
     assert expected_result == result
 
@@ -211,10 +212,12 @@ def test_list_objects_no_objects(
         # Mock return values
         mock_init_client.return_value = MagicMock()  # Mock S3 client
         mock_get_bucket.return_value = MagicMock()  # Mock S3 bucket
-        mock_paginate.return_value = iter(mock_pages) # Simulate pagination result
+        mock_paginate.return_value = iter(mock_pages)  # Simulate pagination result
 
         list_objects(mock_prefix)
-        
+
         # Check warning log message
-        mock_logging.warning.assert_called_once_with(f"No objects found for prefix: '{mock_prefix}'")
+        mock_logging.warning.assert_called_once_with(
+            f"No objects found for prefix: '{mock_prefix}'"
+        )
     assert str(e.value) == f"No objects found for prefix: '{mock_prefix}'"

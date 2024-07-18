@@ -46,9 +46,9 @@ def paginate_s3_objects(s3: boto3.client, bucket: str, prefix: str) -> List[dict
     return page_iterator
 
 
-def filter_object_keys(pages: List[dict]) -> List[str]:
+def filter_object_keys(pages: List[dict], file_extension: str = "") -> List[str]:
     """
-    Filter object keys from the paginated S3 object data.
+    Filter object keys with a specific file extension from the paginated S3 object data.
 
     Args:
         pages (List[dict]): List of pages containing S3 object data.
@@ -60,14 +60,14 @@ def filter_object_keys(pages: List[dict]) -> List[str]:
     for page in pages:
         if "Contents" in page:
             for obj in page["Contents"]:
-                if not obj["Key"].endswith("/"):
+                if (not obj["Key"].endswith("/")) and (obj["Key"].endswith(file_extension)):
                     object_keys.append(obj["Key"])
     return object_keys
 
 
-def list_objects(prefix: str = "") -> List[str]:
+def list_objects(prefix: str = "", file_extension: str = "") -> List[str]:
     """
-    List objects stored in a prefix path of an S3 bucket.
+    List objects with a specific file extension that are stored in a prefix path of an S3 bucket.
 
     Args:
         prefix (str): The prefix path within the S3 bucket to list objects from.
@@ -84,7 +84,7 @@ def list_objects(prefix: str = "") -> List[str]:
 
     try:
         pages = paginate_s3_objects(s3, bucket, prefix)
-        object_keys = filter_object_keys(pages)
+        object_keys = filter_object_keys(pages, file_extension)
 
         if not object_keys:
             logging.warning(f"No objects found for prefix: '{prefix}'")
