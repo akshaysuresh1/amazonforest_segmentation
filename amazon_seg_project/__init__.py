@@ -1,1 +1,1 @@
-from .scripts import aws_credentials
+from .scripts import aws_credentials, list_s3_objects
