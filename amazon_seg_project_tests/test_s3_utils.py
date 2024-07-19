@@ -1,5 +1,5 @@
 """
-Tests for modules defined in list_s3_objects.py
+Tests for modules defined in s3_utils.py
 """
 
 import pytest
