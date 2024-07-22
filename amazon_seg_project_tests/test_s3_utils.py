@@ -136,9 +136,12 @@ def test_list_objects_success(
     """
     Test for successful execution of list_objects()
     """
-    # Set mock BUCKET environment variable.
-    mock_bucket = "bucket"
-    mock_getenv.side_effect = lambda key: {"BUCKET": mock_bucket}.get(key, None)
+    # Set mock environment variables.
+    mock_bucket_keyword = "BUCKET"
+    mock_bucket_name = "mock_bucket"
+    mock_getenv.side_effect = lambda key: {mock_bucket_keyword: mock_bucket_name}.get(
+        key, None
+    )
 
     # Create mock S3 client.
     mock_s3_client = MagicMock()
@@ -158,7 +161,9 @@ def test_list_objects_success(
     expected_result = ["file1.tif", "file2.tif"]
 
     # Call the test function.
-    result = list_objects(prefix="test_prefix", file_extension=".tif")
+    result = list_objects(
+        mock_bucket_keyword, prefix="test_prefix", file_extension=".tif"
+    )
 
     assert expected_result == result
 
@@ -180,9 +185,10 @@ def test_list_objects_client_error(
     """
     with pytest.raises(ClientError):
         # Mock ClientError
-        mock_paginate.side_effect = ClientError(
+        error = ClientError(
             {"Error": {"Code": "code", "Message": "message"}}, "operation_name"
         )
+        mock_paginate.side_effect = error
         mock_filter_keys.return_value = [
             "object_key1",
             "object_key2",
@@ -190,10 +196,12 @@ def test_list_objects_client_error(
         mock_init_client.return_value = MagicMock()  # Mock S3 client
         mock_get_bucket.return_value = MagicMock()  # Mock S3 bucket
 
-        list_objects(prefix="test_prefix")
+        list_objects("mock_bucket_keyword", prefix="test_prefix")
 
         # Check error logging
-        mock_logging.error.assert_called_once()  # Check that logging.error was called
+        mock_logging.error.assert_called_once(
+            f"S3 ClientError: {error.response['Error']['Message']} - {error.response['Error']['Code']}"
+        )
 
 
 @patch("amazon_seg_project.scripts.s3_utils.initialize_s3_client")
@@ -206,18 +214,21 @@ def test_list_objects_no_objects(
     mock_get_bucket: MagicMock,
     mock_init_client: MagicMock,
 ) -> None:
-    with pytest.raises(ValueError) as e:
+    """
+    Test response of list_objects() to an empty list of objects found at prefix path
+    """
+    mock_prefix = "test_prefix"
+    with pytest.raises(ValueError, match=f"No objects found for prefix: '{mock_prefix}'"):
         mock_pages = [{"NoContents": [{"Key": "file1.tif"}]}]
-        mock_prefix = "test_prefix"
+        
         # Mock return values
         mock_init_client.return_value = MagicMock()  # Mock S3 client
         mock_get_bucket.return_value = MagicMock()  # Mock S3 bucket
         mock_paginate.return_value = iter(mock_pages)  # Simulate pagination result
 
-        list_objects(mock_prefix)
+        list_objects("mock_bucket_keyword", prefix=mock_prefix)
 
         # Check warning log message
         mock_logging.warning.assert_called_once_with(
             f"No objects found for prefix: '{mock_prefix}'"
         )
-    assert str(e.value) == f"No objects found for prefix: '{mock_prefix}'"

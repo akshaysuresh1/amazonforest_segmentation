@@ -28,20 +28,18 @@ def test_get_aws_region_name_nonexistent() -> None:
     """
     Tests the response of get_aws_region_name() to a non-existent AWS_REGION_NAME environment variable
     """
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(AttributeError, match="Environment variable AWS_REGION_NAME is undefined."):
         with mock.patch.dict(os.environ, clear=True):
             get_aws_region_name()
-    assert str(e.value) == "Environment variable AWS_REGION_NAME is undefined."
 
 
 def test_get_aws_region_name_empty() -> None:
     """
     Tests the response of get_aws_region_name() to an empty AWS_REGION_NAME environment variable
     """
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match="Environment variable AWS_REGION_NAME is empty."):
         with mock.patch.dict(os.environ, {"AWS_REGION_NAME": ""}):
             get_aws_region_name()
-    assert str(e.value) == "Environment variable AWS_REGION_NAME is empty."
 
 
 def test_get_aws_region_name_invalidname() -> None:
@@ -49,13 +47,9 @@ def test_get_aws_region_name_invalidname() -> None:
     Tests the response of get_aws_region_name() to an invalid AWS_REGION_NAME environment variable
     """
     mock_region = "asia"
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match=f"Region name '{mock_region}' is not valid or not supported by AWS."):
         with mock.patch.dict(os.environ, {"AWS_REGION_NAME": mock_region}):
             get_aws_region_name()
-    assert (
-        str(e.value)
-        == f"Region name '{mock_region}' is not valid or not supported by AWS."
-    )
 
 
 def test_get_s3_access_key_id_success() -> None:
@@ -71,20 +65,18 @@ def test_get_s3_access_key_id_nonexistent() -> None:
     """
     Tests the response of get_s3_access_key_id() to a non-existent S3_ACCESS_KEY_ID environment variable
     """
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(AttributeError, match="Environment variable S3_ACCESS_KEY_ID is undefined."):
         with mock.patch.dict(os.environ, clear=True):
             get_s3_access_key_id()
-    assert str(e.value) == "Environment variable S3_ACCESS_KEY_ID is undefined."
 
 
 def test_get_s3_access_key_id_empty() -> None:
     """
     Tests the response of get_s3_access_key_id() to an empty S3_ACCESS_KEY_ID environment variable
     """
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match="Environment variable S3_ACCESS_KEY_ID is empty."):
         with mock.patch.dict(os.environ, {"S3_ACCESS_KEY_ID": ""}):
             get_s3_access_key_id()
-    assert str(e.value) == "Environment variable S3_ACCESS_KEY_ID is empty."
 
 
 def test_get_s3_secret_access_key_success() -> None:
@@ -100,46 +92,45 @@ def test_get_s3_secret_access_key_nonexistent() -> None:
     """
     Tests the response of get_s3_secret_access_key() to a non-existent S3_SECRET_ACCESS_KEY environment variable
     """
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(AttributeError, match="Environment variable S3_SECRET_ACCESS_KEY is undefined."):
         with mock.patch.dict(os.environ, clear=True):
             get_s3_secret_access_key()
-    assert str(e.value) == "Environment variable S3_SECRET_ACCESS_KEY is undefined."
 
 
 def test_get_s3_secret_access_key_empty() -> None:
     """
     Tests the response of get_s3_secret_access_key() to an empty S3_SECRET_ACCESS_KEY environment variable
     """
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match="Environment variable S3_SECRET_ACCESS_KEY is empty."):
         with mock.patch.dict(os.environ, {"S3_SECRET_ACCESS_KEY": ""}):
             get_s3_secret_access_key()
-    assert str(e.value) == "Environment variable S3_SECRET_ACCESS_KEY is empty."
 
 
 def test_get_s3_bucket_success() -> None:
     """
     Tests successful execution of get_s3_bucket().
     """
-    bucket = "bucket"
-    with mock.patch.dict(os.environ, {"BUCKET": bucket}):
-        assert bucket == get_s3_bucket()
+    mock_bucket_keyword = "BUCKET"
+    mock_bucket_name = "mock_bucket"
+    with mock.patch.dict(os.environ, {mock_bucket_keyword: mock_bucket_name}):
+        assert mock_bucket_name == get_s3_bucket(mock_bucket_keyword)
 
 
 def test_get_s3_bucket_nonexistent() -> None:
     """
     Tests the response of get_s3_bucket() to a non-existent BUCKET environment variable.
     """
-    with pytest.raises(AttributeError) as e:
+    mock_bucket_keyword = "BUCKET"
+    with pytest.raises(AttributeError, match=f"Environment variable {mock_bucket_keyword} is undefined."):
         with mock.patch.dict(os.environ, clear=True):
-            get_s3_bucket()
-    assert str(e.value) == "Environment variable BUCKET is undefined."
+            get_s3_bucket(mock_bucket_keyword)
 
 
 def test_get_s3_bucket_empty() -> None:
     """
     Tests the response of get_s3_bucket() to an empty BUCKET environment variable.
     """
-    with pytest.raises(ValueError) as e:
-        with mock.patch.dict(os.environ, {"BUCKET": ""}):
-            get_s3_bucket()
-    assert str(e.value) == "Environment variable BUCKET is empty."
+    mock_bucket_keyword = "BUCKET"    
+    with pytest.raises(ValueError, match=f"Environment variable {mock_bucket_keyword} is empty."):
+        with mock.patch.dict(os.environ, {mock_bucket_keyword: ""}):
+            get_s3_bucket(mock_bucket_keyword)

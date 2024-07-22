@@ -10,8 +10,7 @@ def get_aws_region_name() -> str:
     """
     Reads AWS region name from environment variables and validates it against AWS_REGIONS_LIST.
 
-    Returns:
-    str: AWS region name
+    Returns: AWS region name
 
     Raises:
     AttributeError: If environment variable AWS_REGION_NAME is undefined
@@ -35,8 +34,7 @@ def get_s3_access_key_id() -> str:
     """
     Reads in S3 access key ID from environment variables.
 
-    Returns:
-    str: S3 access key ID
+    Returns: S3 access key ID
 
     Raises:
     AttributeError: If environment variable S3_ACCESS_KEY_ID is undefined
@@ -56,8 +54,7 @@ def get_s3_secret_access_key() -> str:
     """
     Reads in S3 secret access key from environment variables.
 
-    Returns:
-    str: S3 secret access key
+    Returns: S3 secret access key
 
     Raises:
     AttributeError: If environment variable S3_SECRET_ACCESS_KEY is undefined
@@ -72,22 +69,25 @@ def get_s3_secret_access_key() -> str:
 
     return s3_secret_access_key
 
-def get_s3_bucket() -> str:
-    """
-    Reads in S3 bucket name from environment variables.
 
-    Returns:
-    str: S3 bucket name
+def get_s3_bucket(bucket_keyword: str) -> str:
+    """
+    Reads in S3 bucket name associated with environment variable ``bucket_keyword''.
+
+    Args:
+        bucket_keyword: Environment variable that stores the name of the relevant S3 bucket
+
+    Returns: S3 bucket name
 
     Raises:
-    AttributeError: If environment variable BUCKET is undefined
-    ValueError: If environment variable BUCKET is empty
+        AttributeError: If environment variable ``bucket_keyword'' is undefined
+        ValueError: If environment variable ``bucket_keyword'' is empty
     """
 
-    bucket = os.getenv("BUCKET")
+    bucket = os.getenv(bucket_keyword)
     if bucket is None:
-        raise AttributeError("Environment variable BUCKET is undefined.")
+        raise AttributeError(f"Environment variable {bucket_keyword} is undefined.")
     elif bucket == "":
-        raise ValueError("Environment variable BUCKET is empty.")
-    
+        raise ValueError(f"Environment variable {bucket_keyword} is empty.")
+
     return bucket
