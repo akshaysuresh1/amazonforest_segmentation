@@ -128,21 +128,12 @@ def test_filter_object_keys_contents_mixed() -> None:
 
 
 @patch("amazon_seg_project.scripts.s3_utils.initialize_s3_client")
-@patch("os.getenv")
 def test_list_objects_success(
-    mock_getenv: MagicMock,
     mock_initialize_s3_client: MagicMock,
 ) -> None:
     """
     Test for successful execution of list_objects()
     """
-    # Set mock environment variables.
-    mock_bucket_keyword = "BUCKET"
-    mock_bucket_name = "mock_bucket"
-    mock_getenv.side_effect = lambda key: {mock_bucket_keyword: mock_bucket_name}.get(
-        key, None
-    )
-
     # Create mock S3 client.
     mock_s3_client = MagicMock()
     mock_initialize_s3_client.return_value = mock_s3_client
@@ -162,14 +153,13 @@ def test_list_objects_success(
 
     # Call the test function.
     result = list_objects(
-        mock_bucket_keyword, prefix="test_prefix", file_extension=".tif"
+        "mock_bucket", prefix="test_prefix", file_extension=".tif"
     )
 
     assert expected_result == result
 
 
 @patch("amazon_seg_project.scripts.s3_utils.initialize_s3_client")
-@patch("amazon_seg_project.scripts.s3_utils.get_s3_bucket")
 @patch("amazon_seg_project.scripts.s3_utils.paginate_s3_objects")
 @patch("amazon_seg_project.scripts.s3_utils.filter_object_keys")
 @patch("logging.error")
@@ -177,7 +167,6 @@ def test_list_objects_client_error(
     mock_logging: MagicMock,
     mock_filter_keys: MagicMock,
     mock_paginate: MagicMock,
-    mock_get_bucket: MagicMock,
     mock_init_client: MagicMock,
 ) -> None:
     """
@@ -194,9 +183,8 @@ def test_list_objects_client_error(
             "object_key2",
         ]  # Mock object keys
         mock_init_client.return_value = MagicMock()  # Mock S3 client
-        mock_get_bucket.return_value = MagicMock()  # Mock S3 bucket
 
-        list_objects("mock_bucket_keyword", prefix="test_prefix")
+        list_objects("mock_bucket", prefix="test_prefix")
 
         # Check error logging
         mock_logging.error.assert_called_once(
@@ -205,28 +193,27 @@ def test_list_objects_client_error(
 
 
 @patch("amazon_seg_project.scripts.s3_utils.initialize_s3_client")
-@patch("amazon_seg_project.scripts.s3_utils.get_s3_bucket")
 @patch("amazon_seg_project.scripts.s3_utils.paginate_s3_objects")
 @patch("logging.warning")
 def test_list_objects_no_objects(
     mock_logging: MagicMock,
     mock_paginate: MagicMock,
-    mock_get_bucket: MagicMock,
     mock_init_client: MagicMock,
 ) -> None:
     """
     Test response of list_objects() to an empty list of objects found at prefix path
     """
     mock_prefix = "test_prefix"
-    with pytest.raises(ValueError, match=f"No objects found for prefix: '{mock_prefix}'"):
+    with pytest.raises(
+        ValueError, match=f"No objects found for prefix: '{mock_prefix}'"
+    ):
         mock_pages = [{"NoContents": [{"Key": "file1.tif"}]}]
-        
+
         # Mock return values
         mock_init_client.return_value = MagicMock()  # Mock S3 client
-        mock_get_bucket.return_value = MagicMock()  # Mock S3 bucket
         mock_paginate.return_value = iter(mock_pages)  # Simulate pagination result
 
-        list_objects("mock_bucket_keyword", prefix=mock_prefix)
+        list_objects("mock_bucket", prefix=mock_prefix)
 
         # Check warning log message
         mock_logging.warning.assert_called_once_with(

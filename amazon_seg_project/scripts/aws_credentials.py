@@ -70,12 +70,12 @@ def get_s3_secret_access_key() -> str:
     return s3_secret_access_key
 
 
-def get_s3_bucket(bucket_keyword: str) -> str:
+def get_s3_bucket(bucket_env_var: str) -> str:
     """
     Reads in S3 bucket name associated with environment variable ``bucket_keyword''.
 
     Args:
-        bucket_keyword: Environment variable that stores the name of the relevant S3 bucket
+        bucket_env_var: Environment variable that stores the name of the relevant S3 bucket
 
     Returns: S3 bucket name
 
@@ -84,10 +84,10 @@ def get_s3_bucket(bucket_keyword: str) -> str:
         ValueError: If environment variable ``bucket_keyword'' is empty
     """
 
-    bucket = os.getenv(bucket_keyword)
+    bucket = os.getenv(bucket_env_var)
     if bucket is None:
-        raise AttributeError(f"Environment variable {bucket_keyword} is undefined.")
+        raise AttributeError(f"Environment variable {bucket_env_var} is undefined.")
     elif bucket == "":
-        raise ValueError(f"Environment variable {bucket_keyword} is empty.")
+        raise ValueError(f"Environment variable {bucket_env_var} is empty.")
 
     return bucket

@@ -110,27 +110,27 @@ def test_get_s3_bucket_success() -> None:
     """
     Tests successful execution of get_s3_bucket().
     """
-    mock_bucket_keyword = "BUCKET"
+    mock_bucket_env_var = "BUCKET"
     mock_bucket_name = "mock_bucket"
-    with mock.patch.dict(os.environ, {mock_bucket_keyword: mock_bucket_name}):
-        assert mock_bucket_name == get_s3_bucket(mock_bucket_keyword)
+    with mock.patch.dict(os.environ, {mock_bucket_env_var: mock_bucket_name}):
+        assert mock_bucket_name == get_s3_bucket(mock_bucket_env_var)
 
 
 def test_get_s3_bucket_nonexistent() -> None:
     """
     Tests the response of get_s3_bucket() to a non-existent BUCKET environment variable.
     """
-    mock_bucket_keyword = "BUCKET"
-    with pytest.raises(AttributeError, match=f"Environment variable {mock_bucket_keyword} is undefined."):
+    mock_bucket_env_var = "BUCKET"
+    with pytest.raises(AttributeError, match=f"Environment variable {mock_bucket_env_var} is undefined."):
         with mock.patch.dict(os.environ, clear=True):
-            get_s3_bucket(mock_bucket_keyword)
+            get_s3_bucket(mock_bucket_env_var)
 
 
 def test_get_s3_bucket_empty() -> None:
     """
     Tests the response of get_s3_bucket() to an empty BUCKET environment variable.
     """
-    mock_bucket_keyword = "BUCKET"    
-    with pytest.raises(ValueError, match=f"Environment variable {mock_bucket_keyword} is empty."):
-        with mock.patch.dict(os.environ, {mock_bucket_keyword: ""}):
-            get_s3_bucket(mock_bucket_keyword)
+    mock_bucket_env_var = "BUCKET"    
+    with pytest.raises(ValueError, match=f"Environment variable {mock_bucket_env_var} is empty."):
+        with mock.patch.dict(os.environ, {mock_bucket_env_var: ""}):
+            get_s3_bucket(mock_bucket_env_var)

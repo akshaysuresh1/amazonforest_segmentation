@@ -10,7 +10,6 @@ from .aws_credentials import (
     get_aws_region_name,
     get_s3_access_key_id,
     get_s3_secret_access_key,
-    get_s3_bucket,
 )
 
 
@@ -70,13 +69,13 @@ def filter_object_keys(
 
 
 def list_objects(
-    bucket_keyword: str, prefix: str = "", file_extension: str = ""
+    bucket: str, prefix: str = "", file_extension: str = ""
 ) -> List[str]:
     """
     List objects with a specific file extension that are stored in a prefix path of an S3 bucket.
 
     Args:
-        bucket_keyword: Environment variable that stores the name of the relevant S3 bucket
+        bucket: Name of S3 bucket
         prefix: The prefix path within the S3 bucket to list objects from.
         file_extension: File format extension (e.g., ".tif", ".txt", ".img", etc.)
 
@@ -87,7 +86,6 @@ def list_objects(
         ValueError: If no objects are found for the given prefix.
     """
     s3 = initialize_s3_client()
-    bucket = get_s3_bucket(bucket_keyword)
 
     try:
         pages = paginate_s3_objects(s3, bucket, prefix)
