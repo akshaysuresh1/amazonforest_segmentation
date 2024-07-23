@@ -5,7 +5,6 @@ Tests for modules defined in tif_utils.py
 import pytest
 from unittest.mock import patch, MagicMock
 from io import BytesIO
-import boto3
 import numpy as np
 import xarray as xr
 import pickle

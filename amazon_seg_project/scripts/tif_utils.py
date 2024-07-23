@@ -7,7 +7,6 @@ import boto3
 import numpy as np
 import rioxarray as rxr
 import xarray as xr
-from .s3_utils import initialize_s3_client
 
 
 def simulate_mock_multispec_data(
