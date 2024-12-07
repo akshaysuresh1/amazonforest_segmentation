@@ -1,8 +1,7 @@
 """
-Values of global variables
+Values of global variables representing data paths
 """
 
-import boto3
 from pathlib import Path
 
 # Path to training data and labels
@@ -16,6 +15,3 @@ VALIDATION_MASKS_PREFIX = Path("validation") / "masks"
 # Paths to test data
 TEST_IMAGES_PREFIX = Path("test") / "images"
 TEST_MASKS_PREFIX = Path("test") / "masks"
-
-# Allowed AWS region names
-AWS_REGIONS_LIST = boto3.session.Session().get_available_regions('s3')

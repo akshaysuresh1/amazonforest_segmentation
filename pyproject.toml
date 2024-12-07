@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "amazon_seg_project"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error", # treat all warnings as errors
+    "ignore:.*custom tp_new.*in Python 3.14.*:DeprecationWarning",
+]

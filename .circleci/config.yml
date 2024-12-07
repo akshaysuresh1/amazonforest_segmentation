@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: cimg/python:3.12.4  # Example using a Python image
+      - image: cimg/python:3.12.7  # Use Python 3.12.7 Docker image as executor.
     steps:
       - checkout
       - run:
@@ -18,7 +18,7 @@ jobs:
 
   build:
     docker:
-      - image: cimg/python:3.12.4  
+      - image: cimg/python:3.12.7
     steps:
       - checkout
       - run:
@@ -29,7 +29,7 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.12.4
+      - image: cimg/python:3.12.7
     steps:
       - checkout
       - run:
@@ -44,9 +44,21 @@ workflows:
     jobs:
       - test:
           context: AWS_access
+          filters:
+            branches:
+              only:  # Only branches matching the below regex filters will run.
+                - dev
       - build:
           requires:
             - test
+          filters:
+            branches:
+              only:  # Only branches matching the below regex filters will run.
+                - dev
       - deploy:
           requires:
             - build
+          filters:
+            branches:
+              only:  # Only branches matching the below regex filters will run.
+                - dev
