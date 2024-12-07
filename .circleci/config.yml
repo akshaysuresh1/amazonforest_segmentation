@@ -47,18 +47,18 @@ workflows:
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
-                - dev
+                - dagster
       - build:
           requires:
             - test
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
-                - dev
+                - dagster
       - deploy:
           requires:
             - build
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
-                - dev
+                - dagster
