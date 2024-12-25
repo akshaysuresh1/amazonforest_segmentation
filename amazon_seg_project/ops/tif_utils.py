@@ -46,7 +46,7 @@ def simulate_mock_multispec_data(
     if not isinstance(bit_depth, int) or (bit_depth not in bitdepths_to_dtype):
         raise ValueError(
             f"""
-        Unsupported bit depth: {bit_depth}. 
+        Unsupported bit depth: {bit_depth}.
         Supported values are integers 8, 16, 32, and 64."""
         )
 

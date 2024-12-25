@@ -4,8 +4,8 @@ Unit tests for modules defined in amazon_seg_project/ops/tif_utils.py
 
 from io import BytesIO
 from unittest.mock import patch, MagicMock
-import pytest
 import pickle
+import pytest
 import numpy as np
 import xarray as xr
 from botocore.exceptions import ClientError
@@ -79,7 +79,7 @@ def test_simulate_mock_multispec_data_unsupported_bit_depth() -> None:
     with pytest.raises(
         ValueError,
         match=f"""
-        Unsupported bit depth: {bit_depth}. 
+        Unsupported bit depth: {bit_depth}.
         Supported values are integers 8, 16, 32, and 64.""",
     ):
         simulate_mock_multispec_data(3, 4, 5, bit_depth)
