@@ -14,7 +14,10 @@ jobs:
       - run:
           name: Run tests
           command: |
-            pytest
+            # Run unit tests first.
+            pytest -v amazon_seg_project_tests/test_unit
+            # Next, execute integration tests.
+            pytest -v amazon_seg_project_tests/test_integration
 
   build:
     docker:
