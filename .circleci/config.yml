@@ -1,8 +1,8 @@
 version: 2.1
 jobs:
-  test:
+  build:
     docker:
-      - image: cimg/python:3.12.7  # Use Python 3.12.7 Docker image as executor.
+      - image: cimg/python:3.12.7 # Use Python from docker image as executor.
     steps:
       - checkout
       - run:
@@ -11,6 +11,12 @@ jobs:
             python --version
             pip install --upgrade pip
             pip install -e ".[dev]"
+
+  test:
+    docker:
+      - image: cimg/python:3.12.7
+    steps:
+      - checkout
       - run:
           name: Run tests
           command: |
@@ -18,17 +24,6 @@ jobs:
             pytest -v amazon_seg_project_tests/test_unit
             # Next, execute integration tests.
             # pytest -v amazon_seg_project_tests/test_integration
-
-  build:
-    docker:
-      - image: cimg/python:3.12.7
-    steps:
-      - checkout
-      - run:
-          name: Build artifact
-          command: |
-            echo "Building artifact..."
-            # Replace with actual build commands if needed
 
   deploy:
     docker:
@@ -45,22 +40,25 @@ workflows:
   version: 2
   example:
     jobs:
-      - test:
+      - build:
           context: AWS_access
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
                 - dagster
-      - build:
+      - test:
+          context: AWS_access
           requires:
-            - test
+            - build
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
                 - dagster
       - deploy:
+          context: AWS_access
           requires:
             - build
+            - test
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
