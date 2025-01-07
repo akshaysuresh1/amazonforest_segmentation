@@ -7,8 +7,7 @@ jobs:
     steps:
       - checkout
       - restore_cache: # Restores saved cache if branch key and setup.py are unchanged
-          keys:
-            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Install dependencies
           command: |
@@ -20,15 +19,20 @@ jobs:
           key: *afs-cache
           paths:
             - "venv"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - venv
 
   test:
     docker:
       - image: cimg/python:3.12.7
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - restore_cache:
-          keys:
-            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -43,9 +47,10 @@ jobs:
       - image: cimg/python:3.12.7
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - restore_cache:
-          keys:
-            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Deploy to production
           command: |
