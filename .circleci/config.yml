@@ -1,33 +1,33 @@
 version: 2.1
 
-orbs:
-  python: circleci/python@3.0.0
-
 jobs:
   build:
-    executor:
-      name: python/default
-      tag: "3.12.7"
+    docker:
+      - image: cimg/python:3.12.7  # Docker image as executor
     steps:
       - checkout
+      - restore_cache: # Restores saved cache if branch key and setup.py are unchanged
+          keys:
+            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Install dependencies
           command: |
-            python --version
+            python3 -m venv venv
             pip install --upgrade pip
-            pip install -e ".[dev]"
-      - persist_to_workspace:
-          root: ~/project
+            pip install ".[dev]"
+      - save_cache: # Save pip cache in virtual environment**
+          key: *afs-cache
           paths:
-            - .
+            - "venv"
 
   test:
-    executor:
-      name: python/default
-      tag: "3.12.7"
+    docker:
+      - image: cimg/python:3.12.7
     steps:
-      - attach_workspace:
-          at: ~/project
+      - checkout
+      - restore_cache:
+          keys:
+            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -37,12 +37,13 @@ jobs:
             # pytest -v amazon_seg_project_tests/test_integration
 
   deploy:
-    executor:
-      name: python/default
-      tag: "3.12.7"
+    docker:
+      - image: cimg/python:3.12.7
     steps:
-      - attach_workspace:
-          at: ~/project
+      - checkout
+      - restore_cache:
+          keys:
+            - &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Deploy to production
           command: |
@@ -51,7 +52,7 @@ jobs:
 
 workflows:
   version: 2
-  example:
+  build_test_deploy:
     jobs:
       - build:
           context: AWS_access
@@ -70,7 +71,6 @@ workflows:
       - deploy:
           context: AWS_access
           requires:
-            - build
             - test
           filters:
             branches:
