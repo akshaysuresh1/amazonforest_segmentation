@@ -13,6 +13,7 @@ jobs:
           name: Install dependencies
           command: |
             python3 -m venv venv
+            . venv/bin/activate
             pip install --upgrade pip
             pip install ".[dev]"
       - save_cache: # Save pip cache in virtual environment**
@@ -31,6 +32,7 @@ jobs:
       - run:
           name: Run tests
           command: |
+            . venv/bin/activate
             # Run unit tests first.
             pytest -v amazon_seg_project_tests/test_unit
             # Next, execute integration tests.
