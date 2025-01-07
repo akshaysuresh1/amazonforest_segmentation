@@ -1,8 +1,13 @@
 version: 2.1
+
+orbs:
+  python: circleci/python@3.0.0
+
 jobs:
   build:
-    docker:
-      - image: cimg/python:3.12.7 # Use Python from docker image as executor.
+    executor:
+      name: python/default
+      tag: "3.12.7"
     steps:
       - checkout
       - run:
@@ -11,12 +16,18 @@ jobs:
             python --version
             pip install --upgrade pip
             pip install -e ".[dev]"
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
 
   test:
-    docker:
-      - image: cimg/python:3.12.7
+    executor:
+      name: python/default
+      tag: "3.12.7"
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/project
       - run:
           name: Run tests
           command: |
@@ -26,10 +37,12 @@ jobs:
             # pytest -v amazon_seg_project_tests/test_integration
 
   deploy:
-    docker:
-      - image: cimg/python:3.12.7
+    executor:
+      name: python/default
+      tag: "3.12.7"
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/project
       - run:
           name: Deploy to production
           command: |
