@@ -2,8 +2,12 @@
 Intialization of environment variables and Dagster resources
 """
 
+from dotenv import load_dotenv
 from dagster import EnvVar
 from dagster_aws.s3 import S3Resource
+
+
+load_dotenv()
 
 # Environment variables
 AWS_REGION_NAME = EnvVar("AWS_REGION_NAME")
