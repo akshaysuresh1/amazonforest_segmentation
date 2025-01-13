@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - restore_cache: # Restores saved cache if branch key and setup.py are unchanged
-          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-v1-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Install dependencies
           command: |
@@ -32,7 +32,7 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
-          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-v1-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -50,7 +50,7 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
-          key: &afs-cache afs-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: &afs-cache afs-v1-{{ .Branch }}-{{ checksum "setup.py" }}
       - run:
           name: Deploy to production
           command: |
