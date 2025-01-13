@@ -40,7 +40,7 @@ jobs:
             # Run unit tests first.
             pytest -v amazon_seg_project_tests/test_unit
             # Next, execute integration tests.
-            # pytest -v amazon_seg_project_tests/test_integration
+            pytest -v amazon_seg_project_tests/test_integration
 
   deploy:
     docker:

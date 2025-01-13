@@ -14,4 +14,3 @@ VALIDATION_MASKS_PREFIX = Path("validation") / "masks"
 
 # Paths to test data
 TEST_IMAGES_PREFIX = Path("test") / "images"
-TEST_MASKS_PREFIX = Path("test") / "masks"
