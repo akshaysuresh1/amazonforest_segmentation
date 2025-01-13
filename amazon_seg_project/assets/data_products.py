@@ -98,7 +98,7 @@ def data_validation() -> Generator[Output, None, None]:
     )
 
 
-@asset
+@asset(name="test_image_files")
 def data_test() -> Generator[Output, None, None]:
     """
     Test image files
@@ -113,6 +113,5 @@ def data_test() -> Generator[Output, None, None]:
 
     yield Output(
         test_image_files,
-        output_name="test_image_files",
         metadata={"description": f"Count of images = {len(test_image_files)}"},
     )
