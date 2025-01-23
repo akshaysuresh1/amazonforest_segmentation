@@ -79,11 +79,11 @@ def load_tif_from_s3(
     Load multispectral data from .tif file accessed via an S3 object key
 
     Args:
+        s3_resource: Dagster-AWS S3 resource
+        s3_bucket: Name of S3 bucket
         object_key: Object key of .tif file stored in S3 bucket
-        bucket: Name of S3 bucket
-        s3_client: S3 client
 
-    Returns: Multispectral dataset
+    Returns: xarray DataArray object
 
     Raises:
         ValueError: If the object key does not end with the ".tif" file extension

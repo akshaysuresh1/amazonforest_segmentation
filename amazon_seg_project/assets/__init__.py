@@ -7,3 +7,4 @@ from .data_products import (
     data_validation,
     data_test,
 )
+from .statistics import channel_stats_training_data

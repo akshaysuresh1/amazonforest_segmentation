@@ -33,7 +33,7 @@ def test_load_labeled_data_success(mock_s3_resource: MagicMock) -> None:
     for file_key in label_files:
         s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=b"label_content")
 
-    # Create the mock Dagster AWS S3Resource to boto3 client.
+    # Link the mock Dagster AWS S3Resource to boto3 client.
     mock_s3_resource.get_client.return_value = s3_client
 
     # Call the test function.
