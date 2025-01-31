@@ -7,4 +7,5 @@ from .data_products import (
     data_validation,
     data_test,
 )
+from .dataset_definition import SegmentationDataset
 from .statistics import channel_stats_training_data

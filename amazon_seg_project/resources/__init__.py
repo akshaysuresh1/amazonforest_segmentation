@@ -2,6 +2,7 @@
 Intialization of environment variables and Dagster resources
 """
 
+import torch
 from dotenv import load_dotenv
 from dagster import EnvVar
 from dagster_aws.s3 import S3Resource
@@ -21,3 +22,7 @@ s3_resource = S3Resource(
     aws_access_key_id=S3_ACCESS_KEY_ID,
     aws_secret_access_key=S3_SECRET_ACCESS_KEY,
 )
+
+# Set default device config for torch
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.set_default_device(device)
