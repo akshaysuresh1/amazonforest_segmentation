@@ -13,7 +13,7 @@ setup(
         "boto3 >= 1.34, < 1.35",
         "dagster >= 1.9, < 1.10",
         "dagster-aws >= 0.25, < 0.26",
-        "dagster-webserver >= 1.9, < 1.10",
+        "dagster-webserver >= 1.9, < 1.10",        
         "moto >= 5.0, < 5.1",
         "numpy >= 1.26, < 2.0",
         "pandas >= 2.2, < 2.3",

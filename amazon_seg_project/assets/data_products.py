@@ -1,5 +1,8 @@
 """
-Data assets: training, validation, and test datasets
+Data files:
+1. Training data: Images, Masks
+2. Validation data: Images, Masks
+3. Test data
 """
 
 from typing import List, Generator

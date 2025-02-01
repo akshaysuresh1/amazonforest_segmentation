@@ -3,12 +3,12 @@ Dagster definitions
 """
 
 from dagster import Definitions, load_assets_from_modules
-from .assets import data_products, statistics
+from .assets import data_products, datasets, statistics
 from .resources import s3_resource
 from .jobs import compute_training_stats
 
 # Assets
-data_assets = load_assets_from_modules([data_products], group_name="data")
+data_assets = load_assets_from_modules([data_products, datasets], group_name="data")
 stats_assets = load_assets_from_modules([statistics], group_name="stats")
 
 # Jobs
