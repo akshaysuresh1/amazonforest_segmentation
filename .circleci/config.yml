@@ -1,84 +1,31 @@
 version: 2.1
 
 jobs:
-  build:
+  build_and_test:
     docker:
       - image: cimg/python:3.12.7  # Docker image as executor
     steps:
       - checkout
-      - restore_cache: # Restores saved cache if branch key, revision number and setup.py are unchanged
-          key: &afs-cache afs-{{ .Branch }}-{{ .Revision }}-{{ checksum "setup.py" }}
       - run:
-          name: Install dependencies
+          name: Install dependencies and run tests
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install --upgrade pip
             pip install ".[dev]"
-      - save_cache: # Save pip cache in virtual environment**
-          key: *afs-cache
-          paths:
-            - "venv"
-      - persist_to_workspace:
-          root: .
-          paths:
-            - venv
 
-  test:
-    docker:
-      - image: cimg/python:3.12.7
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          key: &afs-cache afs-{{ .Branch }}-{{ .Revision }}-{{ checksum "setup.py" }}
-      - run:
-          name: Run tests
-          command: |
-            . venv/bin/activate
-            # Run unit tests first.
+            # Run unit tests.
             pytest -v amazon_seg_project_tests/test_unit
-            # Next, execute integration tests.
-            pytest -v amazon_seg_project_tests/test_integration
 
-  deploy:
-    docker:
-      - image: cimg/python:3.12.7
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          key: &afs-cache afs-{{ .Branch }}-{{ .Revision }}-{{ checksum "setup.py" }}
-      - run:
-          name: Deploy to production
-          command: |
-            echo "Deploying to production..."
-            # Replace with actual deployment commands if needed
+            # Run integration tests.
+            pytest -v amazon_seg_project_tests/test_integration
 
 workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - build:
+      - build_and_test:
           context: AWS_access
-          filters:
-            branches:
-              only:  # Only branches matching the below regex filters will run.
-                - dagster
-      - test:
-          context: AWS_access
-          requires:
-            - build
-          filters:
-            branches:
-              only:  # Only branches matching the below regex filters will run.
-                - dagster
-      - deploy:
-          context: AWS_access
-          requires:
-            - test
           filters:
             branches:
               only:  # Only branches matching the below regex filters will run.
