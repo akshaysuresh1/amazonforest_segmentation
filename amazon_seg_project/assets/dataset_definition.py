@@ -2,13 +2,14 @@
 Definition of SegmentationDataset class
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import albumentations as A
 import numpy as np
+from numpy.typing import NDArray
+import torch
 from torch.utils.data import Dataset
-from dagster_aws.s3 import S3Resource
 from ..ops import load_tif_from_s3, robust_scaling
-from ..resources import torch
+from ..resources import s3_resource, device, ScalarTypeT
 
 
 class SegmentationDataset(Dataset):
@@ -20,8 +21,10 @@ class SegmentationDataset(Dataset):
         self,
         images_list: List[str],
         masks_list: List[str],
-        s3_resource: S3Resource,
         s3_bucket: str,
+        scaling_func: Callable[
+            [NDArray[ScalarTypeT]], NDArray[ScalarTypeT]
+        ] = robust_scaling,
         do_aug: bool = False,
         horizontal_flip_prob: float = 0.5,
         vertical_flip_prob: float = 0.5,
@@ -33,8 +36,8 @@ class SegmentationDataset(Dataset):
         Args:
             images_list: List of image filenames (or object keys)
             masks_list: List of segmentation masks corresponding to images in "images_list"
-            s3_resource: Dagster-AWS S3 resource
             s3_bucket: Name of S3 bucket containing images and masks
+            scaling_func: Scaling function to be applied to image (d: robust_scaling)
             do_aug: Boolean flag to turn on/off data augmentation (d: False)
             horizontal_flip_prob: Horizontal flip probability (d: 0.5)
             vertical_flip_prob: Vertical flip probability (d: 0.5)
@@ -45,8 +48,8 @@ class SegmentationDataset(Dataset):
 
         self.images = images_list
         self.masks = masks_list
-        self.s3_resource = s3_resource
         self.s3_bucket = s3_bucket
+        self.scaling_func = scaling_func
         self.do_aug = do_aug
         self.horizontal_flip_prob = horizontal_flip_prob
         self.vertical_flip_prob = vertical_flip_prob
@@ -62,9 +65,9 @@ class SegmentationDataset(Dataset):
         """
         # Read in image and segmentation mask as xarray datasets.
         # Image shape = (n_bands, n_y, n_x)
-        image = load_tif_from_s3(self.s3_resource, self.s3_bucket, self.images[index])
+        image = load_tif_from_s3(s3_resource, self.s3_bucket, self.images[index])
         # Mask shape = (1, n_y, n_x)
-        mask = load_tif_from_s3(self.s3_resource, self.s3_bucket, self.masks[index])
+        mask = load_tif_from_s3(s3_resource, self.s3_bucket, self.masks[index])
 
         if image.shape[1] != mask.shape[1]:
             raise ValueError(
@@ -84,7 +87,7 @@ class SegmentationDataset(Dataset):
         image = np.moveaxis(image, 0, -1)  # shape = (n_y, n_x, n_bands)
 
         # Scale image appropriately for deep learning.
-        image = robust_scaling(image)
+        image = self.scaling_func(image)
 
         if self.do_aug:
             transform = A.Compose(
@@ -100,10 +103,14 @@ class SegmentationDataset(Dataset):
             mask = transformed_products["mask"]
 
         # Cast image and mask as torch tensors.
-        # Image shape = (n_bands, n_y, n_x)
-        image = torch.from_numpy(image.copy().astype(np.float64)).permute((2, 0, 1))
-        # Mask shape = (1, n_y, n_x)
-        mask = torch.from_numpy(mask.copy().astype(np.float64)).unsqueeze(0)
+        # Image output shape = (n_bands, n_y, n_x)
+        image = torch.as_tensor(image.copy().astype(np.float64), device=device).permute(
+            (2, 0, 1)
+        )
+        # Mask output shape = (1, n_y, n_x)
+        mask = torch.as_tensor(mask.copy().astype(np.float64), device=device).unsqueeze(
+            0
+        )
 
         return image, mask
 

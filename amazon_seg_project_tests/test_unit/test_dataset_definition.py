@@ -9,13 +9,13 @@ from amazon_seg_project.assets import SegmentationDataset
 
 def test_seg_dataset_creation_success() -> None:
     """
-    Verify correct initialization of SegmentationDataset attributes.
+    Verify correct initialization of SegmentationDataset instance attributes.
     """
     # Define mock variables.
     images_list = ["image1.tif", "image2.tif"]
     masks_list = ["mask1.tif", "mask2.tif"]
-    mock_s3_resource = MagicMock()
     mock_s3_bucket = "test-bucket"
+    mock_scaling_func = MagicMock()
     do_aug = True
     horizontal_flip_probability = 0.25
     vertical_flip_probability = 0.15
@@ -23,21 +23,21 @@ def test_seg_dataset_creation_success() -> None:
 
     # Create the SegmentationDataset object.
     dataset = SegmentationDataset(
-        images_list,
-        masks_list,
-        mock_s3_resource,
-        mock_s3_bucket,
-        do_aug,
-        horizontal_flip_probability,
-        vertical_flip_probability,
-        rotate90_probability,
+        images_list=images_list,
+        masks_list=masks_list,
+        s3_bucket=mock_s3_bucket,
+        scaling_func=mock_scaling_func,
+        do_aug=do_aug,
+        horizontal_flip_prob=horizontal_flip_probability,
+        vertical_flip_prob=vertical_flip_probability,
+        rotate90_prob=rotate90_probability,
     )
 
-    # Assertions for class attributes
+    # Assertions for instance attributes
     assert dataset.images == images_list
     assert dataset.masks == masks_list
-    assert dataset.s3_resource == mock_s3_resource
     assert dataset.s3_bucket == mock_s3_bucket
+    assert dataset.scaling_func == mock_scaling_func
     assert dataset.do_aug == do_aug
     assert dataset.horizontal_flip_prob == horizontal_flip_probability
     assert dataset.vertical_flip_prob == vertical_flip_probability
@@ -54,11 +54,10 @@ def test_seg_dataset_creation_length_error() -> None:
         # Define mock variables.
         images_list = ["image1.tif", "image2.tif", "image3.tid"]
         masks_list = ["mask1.tif", "mask2.tif"]
-        mock_s3_resource = MagicMock()
         mock_s3_bucket = "test-bucket"
 
         # Create the SegmentationDataset object.
-        SegmentationDataset(images_list, masks_list, mock_s3_resource, mock_s3_bucket)
+        SegmentationDataset(images_list, masks_list, mock_s3_bucket)
 
 
 def test_seg_dataset_len() -> None:
@@ -68,12 +67,9 @@ def test_seg_dataset_len() -> None:
     # Define mock variables.
     images_list = ["image1.tif", "image2.tif"]
     masks_list = ["mask1.tif", "mask2.tif"]
-    mock_s3_resource = MagicMock()
     mock_s3_bucket = "test-bucket"
 
     # Create the SegmentationDataset object.
-    dataset = SegmentationDataset(
-        images_list, masks_list, mock_s3_resource, mock_s3_bucket
-    )
+    dataset = SegmentationDataset(images_list, masks_list, mock_s3_bucket)
 
     assert len(dataset) == len(images_list)

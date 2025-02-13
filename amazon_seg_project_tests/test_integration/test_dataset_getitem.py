@@ -14,7 +14,7 @@ from amazon_seg_project.resources import torch
 
 
 @mock_aws
-@patch("dagster_aws.s3.S3Resource")
+@patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 def test_seg_dataset_getitem_unequal_row_counts(mock_s3_resource: MagicMock) -> None:
     """
     Test the __getitem__() method for an image-mask pair with unequal row counts.
@@ -60,16 +60,14 @@ def test_seg_dataset_getitem_unequal_row_counts(mock_s3_resource: MagicMock) -> 
         mock_s3_resource.get_client.return_value = s3_client
 
         # Create the SegmentationDataset object.
-        seg_dataset = SegmentationDataset(
-            images_list, masks_list, mock_s3_resource, s3_bucket
-        )
+        seg_dataset = SegmentationDataset(images_list, masks_list, s3_bucket)
 
         # Call the __getitem__() method.
         _ = seg_dataset[index]
 
 
 @mock_aws
-@patch("dagster_aws.s3.S3Resource")
+@patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 def test_seg_dataset_getitem_unequal_column_counts(mock_s3_resource: MagicMock) -> None:
     """
     Test the __getitem__() method for an image-mask pair with unequal column counts.
@@ -115,23 +113,15 @@ def test_seg_dataset_getitem_unequal_column_counts(mock_s3_resource: MagicMock) 
         mock_s3_resource.get_client.return_value = s3_client
 
         # Create the SegmentationDataset object.
-        seg_dataset = SegmentationDataset(
-            images_list, masks_list, mock_s3_resource, s3_bucket
-        )
+        seg_dataset = SegmentationDataset(images_list, masks_list, s3_bucket)
 
         # Call the __getitem__() method.
         _ = seg_dataset[index]
 
 
 @mock_aws
-@patch("dagster_aws.s3.S3Resource")
-@patch(
-    "amazon_seg_project.assets.dataset_definition.robust_scaling",
-    side_effect=lambda x: x,
-)
-def test_seg_dataset_getitem_valid_without_aug(
-    mock_scaling: MagicMock, mock_s3_resource: MagicMock
-) -> None:
+@patch("amazon_seg_project.assets.dataset_definition.s3_resource")
+def test_seg_dataset_getitem_valid_without_aug(mock_s3_resource: MagicMock) -> None:
     """
     Test response of __getitem__() to valid inputs without data augmentation.
 
@@ -178,13 +168,14 @@ def test_seg_dataset_getitem_valid_without_aug(
     expected_mask = torch.from_numpy(mask_ds.to_numpy().astype(np.float64))
 
     # Create a SegmentationDataset object and call its test method.
+    # The scaling function is mocked as identity operator.
     seg_dataset = SegmentationDataset(
-        images_list, masks_list, mock_s3_resource, s3_bucket
+        images_list=images_list,
+        masks_list=masks_list,
+        s3_bucket=s3_bucket,
+        scaling_func=lambda x: x,
     )
     output_image, output_mask = seg_dataset[index]
-
-    # Assert that robust_scaling() was called once.
-    mock_scaling.assert_called_once()
 
     # Verify that outputs match expected results.
     assert torch.equal(

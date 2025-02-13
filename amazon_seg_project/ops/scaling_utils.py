@@ -3,13 +3,15 @@ Utility functions for data scaling
 """
 
 import numpy as np
+import numpy.typing as npt
+from ..resources import ScalarTypeT
 
 
 def robust_scaling(
-    data: np.ndarray,
-    means: np.ndarray = np.array([622.59, 683.14, 436.69, 2951.97]),
-    sigma: np.ndarray = np.array([541.08, 368.43, 342.26, 633.47]),
-) -> np.ndarray:
+    data: npt.NDArray[ScalarTypeT],
+    means: npt.NDArray[ScalarTypeT] = np.array([622.59, 683.14, 436.69, 2951.97]),
+    sigma: npt.NDArray[ScalarTypeT] = np.array([541.08, 368.43, 342.26, 633.47]),
+) -> npt.NDArray[ScalarTypeT]:
     """
     Normalize image data using input channel-wise means and standard deviations.
 

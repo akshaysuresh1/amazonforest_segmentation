@@ -13,10 +13,11 @@ setup(
         "boto3 >= 1.34, < 1.35",
         "dagster >= 1.9, < 1.10",
         "dagster-aws >= 0.25, < 0.26",
-        "dagster-webserver >= 1.9, < 1.10",        
+        "dagster-webserver >= 1.9, < 1.10",
         "moto >= 5.0, < 5.1",
         "numpy >= 1.26, < 2.0",
         "pandas >= 2.2, < 2.3",
+        "pydantic >= 2.10, < 2.11",
         "pytest >= 8.2, < 8.3",
         "python-dotenv >= 1.0, < 1.1",
         "rioxarray >= 0.17, < 0.18",
@@ -28,6 +29,7 @@ setup(
     extras_require={
         "dev": [
             "matplotlib >= 3.10, < 3.11",
+            "torchinfo >= 1.8, < 1.9",
         ]
     },
     author="Akshay Suresh",
