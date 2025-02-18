@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 import torch
 from torch.utils.data import Dataset
 from ..ops import load_tif_from_s3, robust_scaling
-from ..resources import s3_resource, device, ScalarTypeT
+from ..resources import s3_resource, ScalarTypeT
 
 
 class SegmentationDataset(Dataset):
@@ -104,13 +104,9 @@ class SegmentationDataset(Dataset):
 
         # Cast image and mask as torch tensors.
         # Image output shape = (n_bands, n_y, n_x)
-        image = torch.as_tensor(image.copy().astype(np.float64), device=device).permute(
-            (2, 0, 1)
-        )
+        image = torch.from_numpy(image.copy().astype(np.float32)).permute((2, 0, 1))
         # Mask output shape = (1, n_y, n_x)
-        mask = torch.as_tensor(mask.copy().astype(np.float64), device=device).unsqueeze(
-            0
-        )
+        mask = torch.from_numpy(mask.copy().astype(np.float32)).unsqueeze(0)
 
         return image, mask
 

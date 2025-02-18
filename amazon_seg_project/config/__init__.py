@@ -31,4 +31,6 @@ class FinetunedUnetConfig(Config):
     Configurable parameters to asset "finetuned_unet
     """
 
-    batch_size: int = Field(default=64)
+    batch_size: int = Field(default=8)
+    max_epochs: int = Field(default=50)
+    lr_initial: float = Field(default=1.0e-5)

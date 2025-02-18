@@ -3,12 +3,14 @@ Utility functions to write intermediate output files locally
 """
 
 import os
-from typing import List
+from typing import List, Any
 import numpy as np
 import pandas as pd
+from dagster import op, In
 from amazon_seg_project.data_paths import OUTPUT_PATH
 
 
+@op(ins={"means": In(Any), "sigma": In(Any)})
 def write_stats(means: np.ndarray, sigma: np.ndarray, bands: List[str]) -> None:
     """
     Write channel-wise mean and standard deviation info to a .csv file
