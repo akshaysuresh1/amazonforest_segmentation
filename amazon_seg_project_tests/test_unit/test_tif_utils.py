@@ -18,9 +18,9 @@ def test_simulate_mock_multispec_data_success() -> None:
     Test successful execution of simulate_mock_multispec_data()
     """
     # Test parameters
-    n_bands = np.random.randint(low=1, high=6)  # No. of spectral channels
-    n_y = np.random.randint(low=5, high=20)  # No. of y samples
-    n_x = np.random.randint(low=5, high=20)  # No. of x samples
+    n_bands = np.random.randint(low=1, high=6)  # pylint: disable=no-member
+    n_y = np.random.randint(low=5, high=20)  # pylint: disable=no-member
+    n_x = np.random.randint(low=5, high=20)  # pylint: disable=no-member
     bit_depth = 16  # No. of bits per pixel
 
     # Call test function.
@@ -98,10 +98,10 @@ def test_load_tif_from_s3_success(
     mock_s3_resource.get_client.return_value = mock_s3_client
 
     # Create mock data set for testing.
-    n_bands = np.random.randint(low=1, high=6)  # No. of spectral channels
-    n_y = np.random.randint(low=5, high=20)  # No. of y samples
-    n_x = np.random.randint(low=5, high=20)  # No. of x samples
-    bit_depth = int(np.random.choice([8, 16, 32, 64]))  # No. of bits per pixel
+    n_bands = np.random.randint(low=1, high=6)  # pylint: disable=no-member
+    n_y = np.random.randint(low=5, high=20)  # pylint: disable=no-member
+    n_x = np.random.randint(low=5, high=20)  # pylint: disable=no-member
+    bit_depth = int(np.random.choice([8, 16, 32, 64]))  # pylint: disable=no-member
     dataset = simulate_mock_multispec_data(n_bands, n_y, n_x, bit_depth)
 
     # Serialize dataset to bytes.

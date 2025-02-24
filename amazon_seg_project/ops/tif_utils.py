@@ -52,7 +52,7 @@ def simulate_mock_multispec_data(
 
     # Simulate mock data as 3d numpy array of shape (n_bands, n_y, n_x).
     data_type = bitdepths_to_dtype[bit_depth]
-    data_vals = np.random.randint(
+    data_vals = np.random.randint(  # pylint: disable=no-member
         low=0,
         high=np.iinfo(data_type).max + 1,
         size=(n_bands, n_y, n_x),

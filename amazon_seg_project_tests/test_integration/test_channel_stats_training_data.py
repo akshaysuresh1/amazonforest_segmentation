@@ -9,13 +9,14 @@ from moto import mock_aws
 import numpy as np
 import pytest
 from amazon_seg_project.ops import simulate_mock_multispec_data
+from amazon_seg_project.data_paths import OUTPUT_PATH
 from amazon_seg_project.resources import AMAZON_TIF_BUCKET
 from amazon_seg_project.assets import channel_stats_training_data
 
 
 @mock_aws
 @patch("amazon_seg_project.assets.statistics.s3_resource")
-@patch("amazon_seg_project.assets.statistics.write_stats")
+@patch("amazon_seg_project.assets.statistics.write_stats_to_csv")
 def test_channel_stats_training_data_success(
     mock_write_stats: MagicMock, mock_s3_resource: MagicMock
 ) -> None:
@@ -86,7 +87,10 @@ def test_channel_stats_training_data_success(
 
     # Assert that the write_stats() function is called exactly once.
     mock_write_stats.assert_called_once_with(
-        actual_means, actual_sigma, ["Red", "Green", "Blue", "NIR"]
+        actual_means,
+        actual_sigma,
+        ["Red", "Green", "Blue", "NIR"],
+        OUTPUT_PATH / "stats" / "training_dataset.csv",
     )
 
 

@@ -5,7 +5,8 @@ Dataset statistics computation
 from typing import Generator, List
 import numpy as np
 from dagster import multi_asset, AssetIn, AssetOut, Output
-from ..ops import load_tif_from_s3, write_stats
+from ..ops import load_tif_from_s3, write_stats_to_csv
+from ..data_paths import OUTPUT_PATH
 from ..resources import s3_resource, AMAZON_TIF_BUCKET
 
 
@@ -70,7 +71,12 @@ def channel_stats_training_data(
 
     # Write mean and standard deviation data to disk.
     bands = ["Red", "Green", "Blue", "NIR"]
-    write_stats(mean_training_data, sigma_training_data, bands)
+    write_stats_to_csv(
+        mean_training_data,
+        sigma_training_data,
+        bands,
+        OUTPUT_PATH / "stats" / "training_dataset.csv",
+    )
 
     yield Output(
         mean_training_data,
