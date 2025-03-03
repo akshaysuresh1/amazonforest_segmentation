@@ -2,21 +2,23 @@
 Deep learning models for image segmentation
 """
 
-import os
 from typing import Generator
 import logging
 from tqdm import tqdm
-import numpy as np
-import pandas as pd
-import torch
 import segmentation_models_pytorch as smp
 from dagster import asset, AssetIn, Output
-from torch.utils.data import DataLoader
-import torch.optim as optim
 from . import SegmentationDataset
 from ..config import PretrainedUnetConfig, FinetunedUnetConfig
 from ..data_paths import OUTPUT_PATH
-from ..ops import dice_loss
+from ..ops import (
+    dice_loss,
+    create_data_loaders,
+    setup_adam_w,
+    train_epoch,
+    validate_epoch,
+    save_model_weights,
+    write_loss_data_to_csv,
+)
 from ..resources import device
 
 
@@ -69,68 +71,57 @@ def finetuned_unet_model(
     """
     U-Net model finetuned on Amazon forest satellite imagery
     """
-    # Set up data loaders for training and validation.
-    loader_args = dict(
-        batch_size=config.batch_size,
-        pin_memory=True,
-        num_workers=os.cpu_count(),
-    )
-    train_loader = DataLoader(
-        training_dataset, shuffle=True, drop_last=False, **loader_args
-    )
-    val_loader = DataLoader(
-        validation_dataset, shuffle=False, drop_last=False, **loader_args
+    # Move pretrained model to device of choice for training.
+    model = pretrained_unet
+    model = model.to(device)
+
+    # Create data loaders for training and validation.
+    train_loader, val_loader = create_data_loaders(
+        training_dataset, validation_dataset, batch_size=config.batch_size
     )
 
     # Set up optimizer and loss criterion.
-    optimizer = optim.AdamW(pretrained_unet.parameters(), lr=config.lr_initial)
+    optimizer = setup_adam_w(model, lr_initial=config.lr_initial)
     criterion = dice_loss
+
     # Track minimum validation loss observed across epochs.
     lowest_val_loss = float("inf")
     # Store batch-averaged training and validation loss at every epoch.
     train_loss = []
     val_loss = []
+    # Track epochs since last improvement in validation loss.
+    epochs_since_improvement = 0
+
+    # Log training config parameters.
+    logging.info(
+        "Starting training:\n"
+        "Max no. of epochs = %d\n"
+        "Batch size = %d\n"
+        "Initial learning rate = %.1g\n"
+        "Training dataset size = %d\n"
+        "Validation dataset size = %d\n"
+        "Device = %s",
+        config.max_epochs,
+        config.batch_size,
+        config.lr_initial,
+        len(training_dataset),
+        len(validation_dataset),
+        device.type,
+    )
 
     # Begin model training.
-    logging.info("Starting training:")
-    print(f"Max no. of epochs = {config.max_epochs}")
-    print(f"Batch size = {config.batch_size}")
-    print(f"Initial learning rate = {config.lr_initial}")
-    print(f"Training dataset size = {len(training_dataset)}")
-    print(f"Validation dataset size = {len(validation_dataset)}")
-    print(f"Device = {device.type}")
-
     for epoch in tqdm(range(1, config.max_epochs + 1)):
-        # Training phase
-        pretrained_unet.train()
-        current_train_loss = 0  # Stores average training loss over batches
-        for batch in train_loader:
-            images, true_masks = batch
-            # Set model parameter gradients to zero before every batch training.
-            optimizer.zero_grad()
-            # Compute predicted mask and loss per batch.
-            pred_masks = pretrained_unet(images)
-            loss = criterion(pred_masks, true_masks)
-            current_train_loss += loss.item() * true_masks.shape[0]
-            # Batch gradient descent
-            loss.backward()
-            optimizer.step()
-        current_train_loss /= len(training_dataset)
+        # Training step
+        current_train_loss = train_epoch(
+            model, train_loader, optimizer, criterion, device
+        )
         train_loss.append(current_train_loss)
 
-        # Validation phase
-        pretrained_unet.eval()
-        current_val_loss = 0.0  # Stores average validation loss over batches
-        with torch.no_grad():
-            for batch in val_loader:
-                images, true_masks = batch
-                # Compute predicted mask and loss per batch.
-                pred_masks = pretrained_unet(images)
-                loss = criterion(pred_masks, true_masks)
-                current_val_loss += loss.item() * true_masks.shape[0]
-        current_val_loss /= len(validation_dataset)
+        # Validation step
+        current_val_loss = validate_epoch(model, val_loader, criterion, device)
         val_loss.append(current_val_loss)
 
+        # Log epoch results.
         logging.info(
             "Statistics for epoch %d: \n Training loss: %.4f \n Validation loss: %.4f",
             epoch,
@@ -138,22 +129,33 @@ def finetuned_unet_model(
             val_loss[-1],
         )
 
-        # Write model weights to disk.
+        # Check if validation loss improved.
         if val_loss[-1] < lowest_val_loss:
             lowest_val_loss = val_loss[-1]
+            epochs_since_improvement = 0  # Reset counter
             logging.info(
                 "Achieved new minimum validation loss. Writing model weights to disk."
             )
-            torch.save(
-                pretrained_unet.state_dict(), str(OUTPUT_PATH / "model_weights.pth")
+            save_model_weights(model, OUTPUT_PATH / "model_weights.pt")
+        else:
+            epochs_since_improvement += 1  # Increment counter if no improvement
+            logging.info(
+                "Validation loss did not improve. Epochs since last improvement: %d",
+                epochs_since_improvement,
             )
+
+        # Implement early stopping criterion.
+        if epochs_since_improvement == 5:
+            logging.info(
+                "Early stopping criterion met. Stopping training after epoch %d.",
+                epoch,
+            )
+            break
 
         # Save loss curve data to disk intermittently.
         if epoch % 10 == 0 or epoch == config.max_epochs:
-            loss_df = pd.DataFrame(
-                {"train_loss": np.array(train_loss), "val_loss": np.array(val_loss)},
-                index=np.arange(1, epoch + 1),
+            write_loss_data_to_csv(
+                train_loss, val_loss, OUTPUT_PATH / "train" / "loss_curve.csv"
             )
-            loss_df.to_csv(str(OUTPUT_PATH / "model_loss.csv"), index=False)
 
-    return pretrained_unet
+    return model
