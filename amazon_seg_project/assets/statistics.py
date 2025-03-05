@@ -61,7 +61,7 @@ def channel_stats_training_data(
 
             count += 1
 
-    if count == 0:
+    if count == 0 or channel_sums is None or channel_squared_sums is None:
         raise ValueError("No valid GeoTIFF images found in training data.")
 
     mean_training_data = channel_sums / count

@@ -2,14 +2,11 @@
 Utility functions for data scaling
 """
 
-from typing import Any
 import numpy as np
 import numpy.typing as npt
-from dagster import op, In, Out
 from ..resources import ScalarTypeT
 
 
-@op(ins={"data": In(Any), "means": In(Any), "sigma": In(Any)}, out=Out(Any))
 def robust_scaling(
     data: npt.NDArray[ScalarTypeT],
     means: npt.NDArray[ScalarTypeT] = np.array([622.59, 683.14, 436.69, 2951.97]),

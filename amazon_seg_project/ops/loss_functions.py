@@ -2,9 +2,8 @@
 Loss function for model performance evaluation
 """
 
-from typing import Any
 import torch
-from dagster import op, In, Out
+from dagster import op, In, Out, Any
 
 
 @op(ins={"predicted": In(Any), "target": In(Any), "smooth": In(float)}, out=Out(Any))

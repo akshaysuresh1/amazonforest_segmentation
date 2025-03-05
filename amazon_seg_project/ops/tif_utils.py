@@ -3,11 +3,11 @@ Modules to read/write multispectral data stored in .tif files
 """
 
 from io import BytesIO
-from typing import Any
+from typing import List
 import numpy as np
 import rioxarray as rxr
 import xarray as xr
-from dagster import op, Out
+from dagster import op, Out, Any
 from dagster_aws.s3 import S3Resource
 
 
@@ -54,9 +54,9 @@ def simulate_mock_multispec_data(
     data_type = bitdepths_to_dtype[bit_depth]
     data_vals = np.random.randint(  # pylint: disable=no-member
         low=0,
-        high=np.iinfo(data_type).max + 1,
+        high=np.iinfo(data_type).max + 1,  # type: ignore
         size=(n_bands, n_y, n_x),
-        dtype=data_type,
+        dtype=data_type,  # type: ignore
     )
 
     # Create coordinate arrays.
@@ -74,7 +74,7 @@ def simulate_mock_multispec_data(
 @op(out=Out(Any))
 def load_tif_from_s3(
     s3_resource: S3Resource, s3_bucket: str, object_key: str
-) -> xr.DataArray:
+) -> xr.DataArray | xr.Dataset | List[xr.Dataset]:
     """
     Load multispectral data from .tif file accessed via an S3 object key
 

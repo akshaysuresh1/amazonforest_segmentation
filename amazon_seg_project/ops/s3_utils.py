@@ -6,10 +6,11 @@ import logging
 from typing import List, Iterable, Dict, Any
 from botocore.exceptions import ClientError
 from dagster import op, In, Out
+from dagster import Any as dg_Any
 from dagster_aws.s3 import S3Resource
 
 
-@op(out=Out(Any))
+@op(out=Out(dg_Any))
 def paginate_s3_objects(
     s3: S3Resource, s3_bucket: str, prefix: str
 ) -> Iterable[Dict[str, Any]]:
@@ -28,7 +29,7 @@ def paginate_s3_objects(
     return page_iterator
 
 
-@op(ins={"pages": In(Any), "file_extension": In(str)}, out=Out(List[str]))
+@op(ins={"pages": In(dg_Any), "file_extension": In(str)}, out=Out(List[str]))
 def filter_object_keys(
     pages: Iterable[Dict[str, Any]], file_extension: str = ""
 ) -> List[str]:

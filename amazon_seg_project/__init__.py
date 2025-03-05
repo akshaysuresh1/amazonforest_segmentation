@@ -12,14 +12,15 @@ data_assets = load_assets_from_modules([data_products, datasets], group_name="da
 stats_assets = load_assets_from_modules([statistics], group_name="stats")
 model_assets = load_assets_from_modules([model], group_name="models")
 
+# Combine all assets into a list.
+all_assets = [*data_assets, *stats_assets, *model_assets]
+
 # Jobs
 all_jobs = [compute_training_stats]
 
 # Definitions object for Dagster
 defs = Definitions(
-    assets=data_assets + model_assets + stats_assets,
-    resources={
-        "s3_resource": s3_resource,
-    },
+    assets=all_assets,
+    resources={"s3_resource": s3_resource},
     jobs=all_jobs,
 )

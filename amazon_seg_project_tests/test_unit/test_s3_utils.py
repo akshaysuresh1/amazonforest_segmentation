@@ -2,6 +2,7 @@
 Unit tests for modules defined in amazon_seg_project/ops/s3_utils.py
 """
 
+from typing import List
 from unittest.mock import patch, MagicMock
 import pytest
 from botocore.exceptions import ClientError
@@ -55,7 +56,7 @@ def test_filter_object_keys_empty() -> None:
     """
     Test response of filter_object_keys() to an empty input list of pages.
     """
-    mock_pages = []
+    mock_pages: List[str] = []
     assert not filter_object_keys(mock_pages)
 
 

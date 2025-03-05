@@ -4,11 +4,11 @@ Utility functions for model training, validation, and inference
 
 import os
 import logging
-from typing import Any, Tuple, Union
+from typing import Tuple, Union
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
-from dagster import op, In, Out
+from dagster import op, In, Out, Any
 import segmentation_models_pytorch as smp
 from .write_files import create_directories
 from ..resources import device
@@ -40,20 +40,25 @@ def create_data_loaders(
 
     Returns: Training and validation data loaders
     """
-    max_workers = os.cpu_count()
+    max_workers = os.cpu_count() or 1
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
 
-    loader_args = dict(
+    train_loader = DataLoader(
+        training_dset,
+        shuffle=True,
+        drop_last=False,
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
     )
-    train_loader = DataLoader(
-        training_dset, shuffle=True, drop_last=False, **loader_args
-    )
     val_loader = DataLoader(
-        validation_dset, shuffle=False, drop_last=False, **loader_args
+        validation_dset,
+        shuffle=False,
+        drop_last=False,
+        batch_size=batch_size,
+        pin_memory=True,
+        num_workers=num_workers,
     )
     return train_loader, val_loader
 

@@ -63,23 +63,24 @@ def test_channel_stats_training_data_success(
     mock_s3_resource.get_client.return_value = s3_client
 
     # Call the test function.
-    outputs = list(channel_stats_training_data(list(tif_channels.keys())))
+    images_list = list(tif_channels.keys())
+    outputs = list(channel_stats_training_data(images_list))  # type: ignore
     actual_means = outputs[0].value
     actual_sigma = outputs[1].value
 
     # Validate the outputs.
-    assert (
-        actual_means is not None
-    ), "Channel-wise mean of training data should not be None."
-    assert (
-        actual_sigma is not None
-    ), "Per-channel standard deviation of training data should not be None."
+    assert actual_means is not None, (
+        "Channel-wise mean of training data should not be None."
+    )
+    assert actual_sigma is not None, (
+        "Per-channel standard deviation of training data should not be None."
+    )
 
     # Ensure values are within reasonable bounds.
     assert np.all(actual_means >= 0), "Mean values should be non-negative."
-    assert np.all(
-        actual_sigma >= 0
-    ), "Standard deviation values should be non-negative."
+    assert np.all(actual_sigma >= 0), (
+        "Standard deviation values should be non-negative."
+    )
 
     # Verify that outputs match expected results.
     np.testing.assert_array_equal(actual_means, expected_means)
@@ -135,4 +136,5 @@ def test_channel_stats_training_data_invalid_inputs(
         mock_s3_resource.get_client.return_value = s3_client
 
         # Call the test function.
-        list(channel_stats_training_data(list(tif_channels.keys())))
+        images_list = list(tif_channels.keys())
+        _ = list(channel_stats_training_data(images_list))  # type: ignore

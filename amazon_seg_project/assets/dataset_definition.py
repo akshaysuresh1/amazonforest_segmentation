@@ -5,11 +5,10 @@ Definition of SegmentationDataset class
 from typing import List, Tuple, Callable
 import albumentations as A
 import numpy as np
-from numpy.typing import NDArray
 import torch
 from torch.utils.data import Dataset
 from ..ops import load_tif_from_s3, robust_scaling
-from ..resources import s3_resource, ScalarTypeT
+from ..resources import s3_resource
 
 
 class SegmentationDataset(Dataset):
@@ -22,9 +21,7 @@ class SegmentationDataset(Dataset):
         images_list: List[str],
         masks_list: List[str],
         s3_bucket: str,
-        scaling_func: Callable[
-            [NDArray[ScalarTypeT]], NDArray[ScalarTypeT]
-        ] = robust_scaling,
+        scaling_func: Callable = robust_scaling,
         do_aug: bool = False,
         horizontal_flip_prob: float = 0.5,
         vertical_flip_prob: float = 0.5,
@@ -55,7 +52,7 @@ class SegmentationDataset(Dataset):
         self.vertical_flip_prob = vertical_flip_prob
         self.rotate90_prob = rotate90_prob
 
-    def __getitem__(self, index: int) -> Tuple[torch.tensor, torch.tensor]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Retrieves image-mask pair at specified index from dataset
 

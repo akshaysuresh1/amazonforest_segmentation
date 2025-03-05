@@ -25,7 +25,7 @@ def afs_training_dataset(
     training_dataset = SegmentationDataset(
         images_list=train_image_files,
         masks_list=train_mask_files,
-        s3_bucket=AMAZON_TIF_BUCKET.get_value(),
+        s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
         do_aug=True,
         horizontal_flip_prob=config.horizontal_flip_prob,
@@ -51,7 +51,7 @@ def afs_validation_dataset(
     validation_dataset = SegmentationDataset(
         images_list=val_image_files,
         masks_list=val_mask_files,
-        s3_bucket=AMAZON_TIF_BUCKET.get_value(),
+        s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
         do_aug=False,
     )

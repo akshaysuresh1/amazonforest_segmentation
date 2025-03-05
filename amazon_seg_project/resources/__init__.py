@@ -18,6 +18,9 @@ S3_ACCESS_KEY_ID = EnvVar("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = EnvVar("S3_SECRET_ACCESS_KEY")
 AMAZON_TIF_BUCKET = EnvVar("AMAZON_TIF_BUCKET")
 
+if AMAZON_TIF_BUCKET.get_value() is None:
+    raise ValueError("Environment variable 'AMAZON_TIF_BUCKET' must be set.")
+
 # Dagster-AWS S3 resource
 s3_resource = S3Resource(
     region_name=AWS_REGION_NAME,

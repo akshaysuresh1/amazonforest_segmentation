@@ -4,10 +4,10 @@ Utility functions to write intermediate output files locally
 
 import os
 import logging
-from typing import List, Any, Union
+from typing import List, Union
 import numpy as np
 import pandas as pd
-from dagster import op, In
+from dagster import op, In, Any
 
 
 @op(ins={"filepath": In(Any)})
@@ -81,7 +81,7 @@ def write_loss_data_to_csv(
     """
     if len(train_loss) != len(val_loss):
         raise ValueError("Input lists have different lengths.")
-    
+
     # Append .csv extension if not found at end of file name.
     if not str(outcsv).endswith(".csv"):
         outcsv = str(outcsv) + ".csv"

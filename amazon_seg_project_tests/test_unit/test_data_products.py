@@ -29,7 +29,9 @@ def test_training_data_absent(mock_labeled_data: MagicMock) -> None:
         mock_labeled_data.return_value = ([], [])
 
         # Call the test function.
-        list(data_training())
+        generator_outputs = data_training()
+        # Exhaust the generator via a list.
+        _ = list(generator_outputs)  # type: ignore
 
 
 @patch("amazon_seg_project.assets.data_products.load_labeled_data")
@@ -45,7 +47,9 @@ def test_validation_data_absent(mock_labeled_data: MagicMock) -> None:
         mock_labeled_data.return_value = ([], [])
 
         # Call the test function.
-        list(data_validation())
+        generator_outputs = data_validation()
+        # Exhaust the generator via a list.
+        _ = list(generator_outputs)  # type: ignore
 
 
 @patch("amazon_seg_project.assets.data_products.list_objects")
@@ -61,4 +65,6 @@ def test_testdata_absent(mock_list_objects: MagicMock) -> None:
         mock_list_objects.return_value = []
 
         # Call the test function.
-        list(data_test())
+        generator_outputs = data_test()
+        # Exhaust the generator via a list.
+        _ = list(generator_outputs)  # type: ignore
