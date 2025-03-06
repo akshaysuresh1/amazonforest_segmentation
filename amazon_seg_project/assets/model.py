@@ -150,6 +150,9 @@ def finetuned_unet_model(
                 "Early stopping criterion met. Stopping training after epoch %d.",
                 epoch,
             )
+            write_loss_data_to_csv(
+                train_loss, val_loss, OUTPUT_PATH / "train" / "loss_curve.csv"
+            )
             break
 
         # Save loss curve data to disk intermittently.
