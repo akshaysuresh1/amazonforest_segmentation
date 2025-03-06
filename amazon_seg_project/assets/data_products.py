@@ -51,12 +51,12 @@ def data_training() -> Generator[Output, None, None]:
     yield Output(
         train_image_files,
         output_name="train_image_files",
-        metadata={"description": f"Count of images = {len(train_image_files)}"},
+        metadata={"Count of images": len(train_image_files)},
     )
     yield Output(
         train_mask_files,
         output_name="train_mask_files",
-        metadata={"description": f"Count of masks = {len(train_mask_files)}"},
+        metadata={"Count of masks": len(train_mask_files)},
     )
 
 
@@ -92,12 +92,12 @@ def data_validation() -> Generator[Output, None, None]:
     yield Output(
         val_image_files,
         output_name="val_image_files",
-        metadata={"description": f"Count of images = {len(val_image_files)}"},
+        metadata={"Count of images": len(val_image_files)},
     )
     yield Output(
         val_mask_files,
         output_name="val_mask_files",
-        metadata={"description": f"Count of masks = {len(val_mask_files)}"},
+        metadata={"Count of masks": len(val_mask_files)},
     )
 
 
@@ -116,5 +116,5 @@ def data_test() -> Generator[Output, None, None]:
 
     yield Output(
         test_image_files,
-        metadata={"description": f"Count of images = {len(test_image_files)}"},
+        metadata={"Count of images": len(test_image_files)},
     )
