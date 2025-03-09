@@ -21,7 +21,8 @@ class PretrainedUnetConfig(Config):
     Configurable parameters to asset "pretrained_unet"
     """
 
-    encoder: str = Field(default="resnet50")
+    encoder_name: str = Field(default="resnet50")
+    encoder_weights: str | None = Field(default="imagenet")
     in_channels: int = Field(default=4)
     activation: str = Field(default="sigmoid")
 

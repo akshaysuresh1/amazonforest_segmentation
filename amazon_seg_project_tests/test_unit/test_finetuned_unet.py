@@ -3,7 +3,7 @@ Unit tests for asset "finetuned_unet"
 """
 
 from unittest.mock import patch, MagicMock, call
-import segmentation_models_pytorch as smp
+from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import SegmentationDataset, finetuned_unet_model
 from amazon_seg_project.data_paths import OUTPUT_PATH
 from amazon_seg_project.config import FinetunedUnetConfig
@@ -39,8 +39,8 @@ def test_finetuned_unet_single_epoch_run(
     validation_dataset = SegmentationDataset(
         images_list=[], masks_list=[], s3_bucket="", do_aug=False
     )
-    pretrained_unet = smp.Unet(
-        encoder="resnet50",
+    pretrained_unet = Unet(
+        encoder_name="resnet50",
         encoder_weights=None,
         in_channels=4,
         activation="sigmoid",
@@ -62,7 +62,7 @@ def test_finetuned_unet_single_epoch_run(
     )
 
     # Assertions
-    assert isinstance(output_model, smp.Unet)
+    assert isinstance(output_model, Unet)
     assert next(output_model.parameters()).device == device
     mock_setup_data_loaders.assert_called_once_with(
         training_dataset, validation_dataset, batch_size=config.batch_size
@@ -142,8 +142,8 @@ def test_finetuned_unet_early_stopping_triggered(
     validation_dataset = SegmentationDataset(
         images_list=[], masks_list=[], s3_bucket="", do_aug=False
     )
-    pretrained_unet = smp.Unet(
-        encoder="resnet50",
+    pretrained_unet = Unet(
+        encoder_name="resnet50",
         encoder_weights=None,
         in_channels=4,
         activation="sigmoid",
@@ -165,7 +165,7 @@ def test_finetuned_unet_early_stopping_triggered(
     )
 
     # Assertions
-    assert isinstance(output_model, smp.Unet)
+    assert isinstance(output_model, Unet)
     assert next(output_model.parameters()).device == device
     mock_setup_data_loaders.assert_called_once_with(
         training_dataset, validation_dataset, batch_size=config.batch_size

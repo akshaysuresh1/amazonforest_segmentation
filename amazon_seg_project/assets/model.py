@@ -5,7 +5,7 @@ Deep learning models for image segmentation
 from typing import Generator
 import logging
 from tqdm import tqdm
-import segmentation_models_pytorch as smp
+from segmentation_models_pytorch import Unet
 from dagster import asset, AssetIn, Output
 from . import SegmentationDataset
 from ..config import PretrainedUnetConfig, FinetunedUnetConfig
@@ -29,12 +29,13 @@ def pretrained_unet_model(
     """
     A U-Net model whose encoder has been pretrained on imagenet data
     """
-    model = smp.Unet(
-        encoder=config.encoder,
-        encoder_weights="imagenet",
+    model = Unet(
+        encoder_name=config.encoder_name,
+        encoder_weights=config.encoder_weights,
         in_channels=config.in_channels,
         activation=config.activation,
-    ).to(device)
+    )
+    model = model.to(device)
 
     # Freeze pretrained encoder weights.
     for param in model.encoder.parameters():
@@ -64,10 +65,10 @@ def pretrained_unet_model(
 )
 def finetuned_unet_model(
     config: FinetunedUnetConfig,
-    pretrained_unet: smp.Unet,
+    pretrained_unet: Unet,
     training_dataset: SegmentationDataset,
     validation_dataset: SegmentationDataset,
-) -> smp.Unet:
+) -> Unet:
     """
     U-Net model finetuned on Amazon forest satellite imagery
     """
