@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 import numpy as np
-from amazon_seg_project.ops import (
+from amazon_seg_project.ops.write_files import (
     create_directories,
     write_stats_to_csv,
     write_loss_data_to_csv,

@@ -8,7 +8,11 @@ from pathlib import Path
 import torch
 from torch import optim
 from torch.utils.data import Dataset, RandomSampler, SequentialSampler
-from amazon_seg_project.ops import create_data_loaders, setup_adam_w, save_model_weights
+from amazon_seg_project.ops.torch_utils import (
+    create_data_loaders,
+    setup_adam_w,
+    save_model_weights,
+)
 
 
 class DummyDataset(Dataset):
@@ -123,10 +127,12 @@ def test_setup_adam_w_custom_lr() -> None:
     mock_model = MagicMock()
     param1 = torch.randn(10)
     param2 = torch.randn(20)
-    mock_model.parameters.return_value = iter([
-        param1.requires_grad_(),
-        param2.requires_grad_(),
-    ])
+    mock_model.parameters.return_value = iter(
+        [
+            param1.requires_grad_(),
+            param2.requires_grad_(),
+        ]
+    )
 
     # Call the test function.
     optimizer = setup_adam_w(mock_model, lr_initial=custom_lr)

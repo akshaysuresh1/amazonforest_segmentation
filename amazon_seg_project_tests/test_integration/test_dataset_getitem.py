@@ -8,7 +8,7 @@ import pytest
 import numpy as np
 import boto3
 from moto import mock_aws
-from amazon_seg_project.ops import simulate_mock_multispec_data
+from amazon_seg_project.ops.tif_utils import simulate_mock_multispec_data
 from amazon_seg_project.assets import SegmentationDataset
 from amazon_seg_project.resources import torch
 

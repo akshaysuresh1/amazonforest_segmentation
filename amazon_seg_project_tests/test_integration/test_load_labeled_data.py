@@ -5,7 +5,7 @@ Integration test for load_labeled_data()
 from unittest.mock import patch, MagicMock
 import boto3
 from moto import mock_aws
-from amazon_seg_project.ops import load_labeled_data
+from amazon_seg_project.ops.data_utils import load_labeled_data
 
 
 @mock_aws

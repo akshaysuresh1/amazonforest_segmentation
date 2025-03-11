@@ -6,7 +6,7 @@ from typing import List, Generator
 from dagster import asset, AssetIn, Output
 from . import SegmentationDataset
 from ..config import TrainingDatasetConfig
-from ..ops import robust_scaling
+from ..ops.scaling_utils import robust_scaling
 from ..resources import AMAZON_TIF_BUCKET
 
 

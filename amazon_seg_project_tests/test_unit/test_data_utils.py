@@ -3,7 +3,7 @@ Unit tests for modules defined in amazon_seg_project/ops/data_utils.py
 """
 
 from unittest.mock import patch, MagicMock
-from amazon_seg_project.ops import find_corresponding_files
+from amazon_seg_project.ops.data_utils import find_corresponding_files
 
 
 def test_find_corresponding_files_matching_files() -> None:

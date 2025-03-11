@@ -10,7 +10,10 @@ import numpy as np
 import xarray as xr
 from botocore.exceptions import ClientError
 from botocore.response import StreamingBody
-from amazon_seg_project.ops import simulate_mock_multispec_data, load_tif_from_s3
+from amazon_seg_project.ops.tif_utils import (
+    simulate_mock_multispec_data,
+    load_tif_from_s3,
+)
 
 
 def test_simulate_mock_multispec_data_success() -> None:

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-import segmentation_models_pytorch as smp
-from amazon_seg_project.ops import validate_epoch
-from amazon_seg_project.ops import dice_loss
+from segmentation_models_pytorch import Unet
+from amazon_seg_project.ops.torch_utils import validate_epoch
+from amazon_seg_project.ops.loss_functions import dice_loss
 from amazon_seg_project.resources import device
 
 
@@ -74,7 +74,7 @@ def test_validate_epoch_handles_empty_dataloader() -> None:
         empty_loader = DataLoader(val_dataset, batch_size=batch_size, drop_last=True)
 
         # Define the model, optimizer, and loss criterion.
-        model = smp.Unet(
+        model = Unet(
             encoder="resnet50",
             encoder_weights=None,
             in_channels=in_channels,
@@ -104,7 +104,7 @@ def test_validate_epoch_success() -> None:
         val_dataset, batch_size=batch_size, shuffle=True, drop_last=False
     )
 
-    model = smp.Unet(
+    model = Unet(
         encoder="resnet50",
         encoder_weights=None,
         in_channels=in_channels,

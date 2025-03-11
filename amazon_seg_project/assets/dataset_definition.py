@@ -7,7 +7,8 @@ import albumentations as A
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from ..ops import load_tif_from_s3, robust_scaling
+from ..ops.tif_utils import load_tif_from_s3
+from ..ops.scaling_utils import robust_scaling
 from ..resources import s3_resource
 
 

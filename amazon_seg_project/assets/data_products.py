@@ -15,7 +15,7 @@ from ..data_paths import (
     TEST_IMAGES_PREFIX,
 )
 from ..resources import s3_resource, AMAZON_TIF_BUCKET
-from ..ops import load_labeled_data
+from ..ops.data_utils import load_labeled_data
 from ..ops.s3_utils import list_objects
 
 

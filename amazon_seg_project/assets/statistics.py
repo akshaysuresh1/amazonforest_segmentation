@@ -5,7 +5,8 @@ Dataset statistics computation
 from typing import Generator, List
 import numpy as np
 from dagster import multi_asset, AssetIn, AssetOut, Output
-from ..ops import load_tif_from_s3, write_stats_to_csv
+from ..ops.tif_utils import load_tif_from_s3 
+from ..ops.write_files import write_stats_to_csv
 from ..data_paths import OUTPUT_PATH
 from ..resources import s3_resource, AMAZON_TIF_BUCKET
 

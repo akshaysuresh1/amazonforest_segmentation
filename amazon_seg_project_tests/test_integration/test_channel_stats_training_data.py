@@ -8,7 +8,7 @@ import boto3
 from moto import mock_aws
 import numpy as np
 import pytest
-from amazon_seg_project.ops import simulate_mock_multispec_data
+from amazon_seg_project.ops.tif_utils import simulate_mock_multispec_data
 from amazon_seg_project.data_paths import OUTPUT_PATH
 from amazon_seg_project.resources import AMAZON_TIF_BUCKET
 from amazon_seg_project.assets import channel_stats_training_data

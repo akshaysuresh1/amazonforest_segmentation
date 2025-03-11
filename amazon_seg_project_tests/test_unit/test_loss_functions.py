@@ -4,7 +4,7 @@ Unit tests for modules defined in amazon_seg_project.ops.loss_functions
 
 import pytest
 import torch
-from amazon_seg_project.ops import dice_loss
+from amazon_seg_project.ops.loss_functions import dice_loss
 
 
 def test_dice_loss_unequal_arrayshapes() -> None:

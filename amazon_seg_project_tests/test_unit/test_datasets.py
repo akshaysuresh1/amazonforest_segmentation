@@ -7,7 +7,7 @@ from amazon_seg_project.assets import (
     afs_training_dataset,
     afs_validation_dataset,
 )
-from amazon_seg_project.ops import robust_scaling
+from amazon_seg_project.ops.scaling_utils import robust_scaling
 from amazon_seg_project.resources import AMAZON_TIF_BUCKET
 from amazon_seg_project.config import TrainingDatasetConfig
 

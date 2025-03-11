@@ -1,10 +1,10 @@
 """
-Unit test for asset "pretrained_unet"
+Unit test for asset "basic_unet_model"
 """
 
 from unittest.mock import patch, MagicMock
 from segmentation_models_pytorch import Unet
-from amazon_seg_project.assets import pretrained_unet_model
+from amazon_seg_project.assets import unet_model
 from amazon_seg_project.config import PretrainedUnetConfig
 from amazon_seg_project.resources import device
 
@@ -27,7 +27,7 @@ def test_model_creation(mock_smp_unet: MagicMock) -> None:
     mock_smp_unet.return_value = mock_model
 
     # Call the test function.
-    generator = pretrained_unet_model(config)
+    generator = unet_model(config)
     # Ensure the function is fully executed.
     next(generator)  # type: ignore
 
@@ -62,7 +62,7 @@ def test_model_parameter_settings() -> None:
     )
 
     # Call the test function.
-    output_generator = pretrained_unet_model(config)
+    output_generator = unet_model(config)
     # Exhaust the generator into a list.
     output = list(output_generator)  # type: ignore
 

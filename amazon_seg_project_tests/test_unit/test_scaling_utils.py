@@ -4,7 +4,7 @@ Unit tests for modules defined in amazon_seg_project/ops/scaling_utils.py
 
 import pytest
 import numpy as np
-from amazon_seg_project.ops import robust_scaling
+from amazon_seg_project.ops.scaling_utils import robust_scaling
 
 
 def test_robust_scaling_success() -> None:

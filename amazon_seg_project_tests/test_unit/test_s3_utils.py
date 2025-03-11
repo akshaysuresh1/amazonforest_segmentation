@@ -6,7 +6,7 @@ from typing import List
 from unittest.mock import patch, MagicMock
 import pytest
 from botocore.exceptions import ClientError
-from amazon_seg_project.ops import (
+from amazon_seg_project.ops.s3_utils import (
     paginate_s3_objects,
     filter_object_keys,
     list_objects,
@@ -95,7 +95,7 @@ def test_filter_object_keys_contents_mixed() -> None:
     assert filter_object_keys(pages_mixed, ".tif") == expected_result
 
 
-@patch("amazon_seg_project.ops.paginate_s3_objects")
+@patch("amazon_seg_project.ops.s3_utils.paginate_s3_objects")
 def test_list_objects_success(mock_paginate: MagicMock) -> None:
     """
     Test for successful execution of list_objects()
