@@ -24,7 +24,7 @@ setup(
         "segmentation_models_pytorch >= 0.4, < 0.5",
         "torch >= 2.2, < 2.3",
         "torchvision >= 0.17, < 0.18",
-        "wandb >= 0.19, < 0.20"
+        "wandb >= 0.19, < 0.20",
         "xarray >= 2024.6, < 2024.7",
     ],
     extras_require={
