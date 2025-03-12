@@ -5,13 +5,13 @@ Deep learning models for image segmentation
 from typing import Generator
 from segmentation_models_pytorch import Unet
 from dagster import asset, Output
-from ..config import PretrainedUnetConfig
+from ..config import BasicUnetConfig
 from ..resources import device
 
 
 @asset(name="basic_unet_model")
 def unet_model(
-    config: PretrainedUnetConfig,
+    config: BasicUnetConfig,
 ) -> Generator[Output, None, None]:
     """
     A U-Net model with frozen encoder weights

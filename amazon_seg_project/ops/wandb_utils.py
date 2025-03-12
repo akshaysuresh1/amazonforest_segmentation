@@ -6,7 +6,7 @@ from typing import Dict, Any
 from tqdm import tqdm
 import torch
 import wandb
-from dagster import op, In
+from dagster import op, In, materialize, RunConfig
 from dagster import Any as dg_Any
 from segmentation_models_pytorch import Unet
 from .loss_functions import dice_loss
@@ -18,7 +18,15 @@ from .torch_utils import (
     save_model_weights,
 )
 from .write_files import write_loss_data_to_csv
-from ..assets import SegmentationDataset
+from ..assets import (
+    SegmentationDataset,
+    unet_model,
+    data_training,
+    data_validation,
+    afs_training_dataset,
+    afs_validation_dataset,
+)
+from ..config import BasicUnetConfig, ModelTrainingConfig
 from ..data_paths import OUTPUT_PATH
 from ..resources import device
 
@@ -31,19 +39,19 @@ from ..resources import device
         "model": In(dg_Any),
     }
 )
-def unet_training_experiment(
+def train_unet(
     wandb_config: Dict[str, Any],
     training_dset: SegmentationDataset,
     validation_dset: SegmentationDataset,
     model: Unet,
 ) -> None:
     """
-    Initiate a W&B experiment to train a U-net model using batch gradient descent.
+    Train a U-net using batch gradient descent and log results to W&B.
     """
     with wandb.init(config=wandb_config) as run:
         # If called by wandb.agent, this config will be set by Sweep Controller.
         config = run.config
-        encoder = config["encoder"]
+        encoder = config["encoder_name"]
         batch_size = config["batch_size"]
         lr_initial = config["lr_initial"]
         torch.manual_seed(config["seed"])
@@ -114,3 +122,44 @@ def unet_training_experiment(
                 write_loss_data_to_csv(
                     train_loss, val_loss, OUTPUT_PATH / "train" / loss_curve_csv
                 )
+
+
+@op
+def run_wandb_training(config: ModelTrainingConfig) -> None:
+    """
+    Materialize data assets and conduct model training with W&B integration.
+    """
+    # Materialize data assets and model.
+    unet_config = BasicUnetConfig(encoder_name=config.encoder_name)
+    assets = [
+        data_training,
+        data_validation,
+        afs_training_dataset,
+        afs_validation_dataset,
+        unet_model,
+    ]
+    result = materialize(
+        assets, run_config=RunConfig({"basic_unet_model": unet_config})
+    )
+
+    # Access training and validation datasets from materialization.
+    training_dataset = result.asset_value("training_dataset")
+    validation_dataset = result.asset_value("validation_dataset")
+    model = result.asset_value("basic_unet_model")
+
+    # Create W&B config dictionary.
+    encoder = config.encoder_name
+    batch_size = config.batch_size
+    lr_initial = config.lr_initial
+    wandb_config = {
+        "project": config.project,
+        "name": f"{encoder}_batch{batch_size}_lr{lr_initial}",
+        "seed": config.seed,
+        "encoder_name": encoder,
+        "batch_size": batch_size,
+        "lr_initial": lr_initial,
+        "max_epochs": config.max_epochs,
+    }
+
+    # Call model training op.
+    train_unet(wandb_config, training_dataset, validation_dataset, model)

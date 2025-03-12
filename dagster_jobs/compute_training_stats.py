@@ -1,5 +1,5 @@
 """
-Programmatic execution of compute_training_stats()
+Programmatic execution of job compute_training_stats()
 
 Execution syntax from main repo directory:
 python dagster_jobs/compute_training_stats.py

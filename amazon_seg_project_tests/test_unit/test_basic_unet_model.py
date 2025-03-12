@@ -5,7 +5,7 @@ Unit test for asset "basic_unet_model"
 from unittest.mock import patch, MagicMock
 from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import unet_model
-from amazon_seg_project.config import PretrainedUnetConfig
+from amazon_seg_project.config import BasicUnetConfig
 from amazon_seg_project.resources import device
 
 
@@ -15,7 +15,7 @@ def test_model_creation(mock_smp_unet: MagicMock) -> None:
     Test if the model is created correctly and moved to the correct device.
     """
     # Define config for mock model.
-    config = PretrainedUnetConfig(
+    config = BasicUnetConfig(
         encoder_name="resnet34",
         encoder_weights=None,
         in_channels=3,
@@ -54,7 +54,7 @@ def test_model_parameter_settings() -> None:
     Also, check that the encoder weights are frozen.
     """
     # Set up config for model.
-    config = PretrainedUnetConfig(
+    config = BasicUnetConfig(
         encoder_name="resnet34",
         encoder_weights=None,
         in_channels=3,

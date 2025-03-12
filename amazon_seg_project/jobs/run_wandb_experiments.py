@@ -1,16 +1,14 @@
 """
-Job: Run a ML experiment using Weights & Biases.
+Job: Run an ML experiment using Weights & Biases.
 """
 
-"""
-from ..ops.wandb_experiment import model_training_exp
+from dagster import job
+from ..ops.wandb_utils import run_wandb_training
 
-setup_config = {
-    "horizontal_flip_prob": 0.5,
-    "vertical_flip_prob": 0.5,
-    "rotate90_prob": 0.5,
-}
 
-# Turn the graph into a job.
-run_wandb_exp = model_training_exp.to_job(input_values={"wandb_config": setup_config})
-"""
+@job
+def run_wandb_experiment() -> None:
+    """
+    Initiate a W&B experiment for ML model training
+    """
+    run_wandb_training()  # pylint: disable=E1120
