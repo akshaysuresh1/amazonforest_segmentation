@@ -33,6 +33,7 @@ from ..resources import device
 
 @op(
     ins={
+        "project_name": In(str),
         "wandb_config": In(Dict[str, dg_Any]),
         "training_dset": In(dg_Any),
         "validation_dset": In(dg_Any),
@@ -40,6 +41,7 @@ from ..resources import device
     }
 )
 def train_unet(
+    project_name: str,
     wandb_config: Dict[str, Any],
     training_dset: SegmentationDataset,
     validation_dset: SegmentationDataset,
@@ -48,7 +50,7 @@ def train_unet(
     """
     Train a U-net using batch gradient descent and log results to W&B.
     """
-    with wandb.init(config=wandb_config) as run:
+    with wandb.init(project=project_name, config=wandb_config) as run:
         # If called by wandb.agent, this config will be set by Sweep Controller.
         config = run.config
         encoder = config["encoder_name"]
@@ -152,7 +154,6 @@ def run_wandb_training(config: ModelTrainingConfig) -> None:
     batch_size = config.batch_size
     lr_initial = config.lr_initial
     wandb_config = {
-        "project": config.project,
         "name": f"{encoder}_batch{batch_size}_lr{lr_initial}",
         "seed": config.seed,
         "encoder_name": encoder,
@@ -162,4 +163,6 @@ def run_wandb_training(config: ModelTrainingConfig) -> None:
     }
 
     # Call model training op.
-    train_unet(wandb_config, training_dataset, validation_dataset, model)
+    train_unet(
+        config.project, wandb_config, training_dataset, validation_dataset, model
+    )

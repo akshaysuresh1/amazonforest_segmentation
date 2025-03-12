@@ -46,7 +46,6 @@ def test_run_wandb_training(
     lr_initial = test_config.lr_initial
     mock_unet_config = BasicUnetConfig(encoder_name=test_config.encoder_name)
     mock_wandb_config = {
-        "project": test_config.project,
         "name": f"{encoder}_batch{batch_size}_lr{lr_initial}",
         "seed": test_config.seed,
         "encoder_name": encoder,
@@ -79,6 +78,7 @@ def test_run_wandb_training(
     assert mock_result.asset_value("validation_dataset") == mock_validation_dataset
     assert mock_result.asset_value("basic_unet_model") == mock_unet_model
     mock_train_unet.assert_called_once_with(
+        test_config.project,
         mock_wandb_config,
         mock_training_dataset,
         mock_validation_dataset,

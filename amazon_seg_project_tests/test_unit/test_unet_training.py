@@ -76,10 +76,12 @@ def test_single_epoch_training(
     mock_validate_epoch.return_value = 0.4
 
     # Call the test function.
-    train_unet(wandb_config, training_dataset, validation_dataset, model)
+    train_unet(
+        "mock_project", wandb_config, training_dataset, validation_dataset, model
+    )
 
     # Assertions
-    mock_wandb_init.assert_called_once_with(config=wandb_config)
+    mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
     mock_torch_seed.assert_called_once_with(wandb_config["seed"])
     assert next(model.parameters()).device == device
     mock_create_data_loaders.assert_called_once_with(
@@ -173,10 +175,12 @@ def test_early_stopping(
     mock_validate_epoch.side_effect = mock_val_loss
 
     # Call the test function.
-    train_unet(wandb_config, training_dataset, validation_dataset, model)
+    train_unet(
+        "mock_project", wandb_config, training_dataset, validation_dataset, model
+    )
 
     # Assertions
-    mock_wandb_init.assert_called_once_with(config=wandb_config)
+    mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
     mock_torch_seed.assert_called_once_with(wandb_config["seed"])
     assert next(model.parameters()).device == device
     mock_create_data_loaders.assert_called_once_with(
