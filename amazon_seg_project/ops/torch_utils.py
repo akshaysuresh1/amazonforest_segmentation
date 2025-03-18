@@ -43,7 +43,7 @@ def create_data_loaders(
     max_workers = os.cpu_count() or 1
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
-    
+
     generator = torch.Generator(device=device.type)
 
     train_loader = DataLoader(

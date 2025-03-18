@@ -27,7 +27,11 @@ def test_val_epoch_moves_data_to_device() -> None:
     )
     val_dataset = TensorDataset(images, masks)
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, drop_last=False
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=False,
+        generator=torch.Generator(device=device.type),
     )
 
     # Set up mock model and loss criterion.
@@ -72,7 +76,12 @@ def test_validate_epoch_handles_empty_dataloader() -> None:
             low=0, high=2, size=(img_count, 1, image_height, image_width)
         )
         val_dataset = TensorDataset(images, masks)
-        empty_loader = DataLoader(val_dataset, batch_size=batch_size, drop_last=True)
+        empty_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            drop_last=True,
+            generator=torch.Generator(device=device.type),
+        )
 
         # Define the model, optimizer, and loss criterion.
         model = Unet(
@@ -102,7 +111,11 @@ def test_validate_epoch_success() -> None:
     masks = torch.randint(low=0, high=2, size=(img_count, 1, image_height, image_width))
     val_dataset = TensorDataset(images, masks)
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=True, drop_last=False, generator=torch.Generator(device=device.type)
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=False,
+        generator=torch.Generator(device=device.type),
     )
 
     model = Unet(
