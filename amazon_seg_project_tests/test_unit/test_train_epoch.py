@@ -28,7 +28,7 @@ def test_train_epoch_moves_data_to_device() -> None:
     )
     train_dataset = TensorDataset(images, masks)
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False
+        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False, generator=torch.Generator(device=device.type),
     )
 
     # Set up mock model, optimizer, and loss criterion.
@@ -50,12 +50,13 @@ def test_train_epoch_moves_data_to_device() -> None:
 
     # Assertions
     mock_model.assert_called()
+    mock_model.to.assert_called_once_with(device)
     mock_criterion.assert_called()
     args, _ = mock_criterion.call_args
     # Check images.device
-    assert args[0].device == device
+    assert args[0].device.type == device.type
     # Check masks.device
-    assert args[1].device == device
+    assert args[1].device.type == device.type
 
 
 def test_train_epoch_optimizer_called() -> None:
@@ -75,7 +76,7 @@ def test_train_epoch_optimizer_called() -> None:
     masks = torch.randint(low=0, high=2, size=(img_count, 1, image_height, image_width))
     train_dataset = TensorDataset(images, masks)
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False
+        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False, generator=torch.Generator(device=device.type),
     )
 
     model = Unet(
@@ -110,7 +111,7 @@ def test_train_epoch_handles_empty_dataloader() -> None:
             low=0, high=2, size=(img_count, 1, image_height, image_width)
         )
         train_dataset = TensorDataset(images, masks)
-        empty_loader = DataLoader(train_dataset, batch_size=batch_size, drop_last=True)
+        empty_loader = DataLoader(train_dataset, batch_size=batch_size, drop_last=True, generator=torch.Generator(device=device.type),)
 
         # Define the model, optimizer, and loss criterion.
         model = Unet(
@@ -141,7 +142,7 @@ def test_train_epoch_success() -> None:
     masks = torch.randint(low=0, high=2, size=(img_count, 1, image_height, image_width))
     train_dataset = TensorDataset(images, masks)
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False
+        train_dataset, batch_size=batch_size, shuffle=True, drop_last=False, generator=torch.Generator(device=device.type),
     )
 
     model = Unet(

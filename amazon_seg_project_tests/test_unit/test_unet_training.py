@@ -83,7 +83,7 @@ def test_single_epoch_training(
     # Assertions
     mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
     mock_torch_seed.assert_called_once_with(wandb_config["seed"])
-    assert next(model.parameters()).device == device
+    assert next(model.parameters()).device.type == device.type
     mock_create_data_loaders.assert_called_once_with(
         training_dataset, validation_dataset, batch_size=batch_size
     )
@@ -182,7 +182,7 @@ def test_early_stopping(
     # Assertions
     mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
     mock_torch_seed.assert_called_once_with(wandb_config["seed"])
-    assert next(model.parameters()).device == device
+    assert next(model.parameters()).device.type == device.type
     mock_create_data_loaders.assert_called_once_with(
         training_dataset, validation_dataset, batch_size=batch_size
     )

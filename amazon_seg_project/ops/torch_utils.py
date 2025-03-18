@@ -43,6 +43,8 @@ def create_data_loaders(
     max_workers = os.cpu_count() or 1
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
+    
+    generator = torch.Generator(device=device.type)
 
     train_loader = DataLoader(
         training_dset,
@@ -51,6 +53,7 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
+        generator=generator,
     )
     val_loader = DataLoader(
         validation_dset,
@@ -59,6 +62,7 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
+        generator=generator,
     )
     return train_loader, val_loader
 
@@ -108,6 +112,7 @@ def train_epoch(
 
     Returns: Batch-averaged training loss for the epoch
     """
+    model.to(device)
     model.train()
     summed_train_loss = 0.0
     n_training_samples = 0  # No. of training samples
@@ -158,6 +163,7 @@ def validate_epoch(
 
     Returns: Batch-averaged validation loss for the epoch
     """
+    model.to(device)
     model.eval()
     summed_val_loss = 0.0
     n_val_samples = 0  # No. of validation samples
