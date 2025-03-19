@@ -9,7 +9,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader, TensorDataset
 from segmentation_models_pytorch import Unet
 from amazon_seg_project.ops.torch_utils import train_epoch
-from amazon_seg_project.ops.loss_functions import dice_loss
+from amazon_seg_project.ops.metrics import dice_loss
 from amazon_seg_project.resources import device
 
 

@@ -1,5 +1,5 @@
 """
-Job: Evaluate and store statistics of training data distribution in a local .csv file.
+Dagster job: Evaluate and store training data statistics in a local .csv file.
 """
 
 from dagster import define_asset_job, AssetSelection

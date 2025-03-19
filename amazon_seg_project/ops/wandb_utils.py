@@ -6,10 +6,10 @@ from typing import Dict, Any
 from tqdm import tqdm
 import torch
 import wandb
-from dagster import op, In, materialize, RunConfig
+from dagster import op, In, materialize_to_memory
 from dagster import Any as dg_Any
 from segmentation_models_pytorch import Unet
-from .loss_functions import dice_loss
+from .metrics import dice_loss
 from .torch_utils import (
     create_data_loaders,
     setup_adam_w,
@@ -131,23 +131,20 @@ def run_wandb_training(config: ModelTrainingConfig) -> None:
     """
     Materialize data assets and conduct model training with W&B integration.
     """
-    # Materialize data assets and model.
+    # Set up model.
     unet_config = BasicUnetConfig(encoder_name=config.encoder_name)
-    assets = [
+    model = unet_model(unet_config)
+
+    # Materialize data assets.
+    data_assets = [
         data_training,
         data_validation,
         afs_training_dataset,
         afs_validation_dataset,
-        unet_model,
     ]
-    result = materialize(
-        assets, run_config=RunConfig({"basic_unet_model": unet_config})
-    )
-
-    # Access training and validation datasets from materialization.
+    result = materialize_to_memory(data_assets)
     training_dataset = result.asset_value("training_dataset")
     validation_dataset = result.asset_value("validation_dataset")
-    model = result.asset_value("basic_unet_model")
 
     # Create W&B config dictionary.
     encoder = config.encoder_name
