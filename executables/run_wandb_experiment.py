@@ -1,8 +1,8 @@
 """
-Programmatic execution of job run_wandb_experiment()
+Programmatic execution of segmentation model training
 
 Execution syntax from main repo directory:
-python dagster_jobs/run_wandb_experiment.py
+python executables/run_wandb_experiment.py
 """
 
 import logging

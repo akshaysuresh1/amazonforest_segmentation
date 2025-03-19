@@ -30,7 +30,6 @@ s3_resource = S3Resource(
 
 # Set default device config for torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_default_device(device)
 
 # Define ScalarType for numpy arrays.
 ScalarTypeT = TypeVar("ScalarTypeT", np.int_, np.float_, np.float64)
