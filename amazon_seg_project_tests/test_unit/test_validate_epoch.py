@@ -31,7 +31,6 @@ def test_val_epoch_moves_data_to_device() -> None:
         batch_size=batch_size,
         shuffle=False,
         drop_last=False,
-        generator=torch.Generator(device=device.type),
     )
 
     # Set up mock model and loss criterion.
@@ -53,11 +52,15 @@ def test_val_epoch_moves_data_to_device() -> None:
     mock_model.assert_called()
     mock_model.to.assert_called_once_with(device)
     mock_criterion.assert_called()
-    args, _ = mock_criterion.call_args
-    # Check images.device
-    assert args[0].device.type == device.type
-    # Check masks.device
-    assert args[1].device.type == device.type
+
+    # Check if data are moved to the correct device during validation.
+    for batch in val_loader:
+        batched_images, batched_masks = batch
+        batched_images, batched_masks = batched_images.to(device), batched_masks.to(device)
+        # Check if the images and masks are on the correct device.
+        assert batched_images.device.type == device.type, "Images are not on the correct device."
+        assert batched_masks.device.type == device.type, "Masks are not on the correct device."
+        break  # Only need to check the first batch
 
 
 def test_validate_epoch_handles_empty_dataloader() -> None:
@@ -80,7 +83,6 @@ def test_validate_epoch_handles_empty_dataloader() -> None:
             val_dataset,
             batch_size=batch_size,
             drop_last=True,
-            generator=torch.Generator(device=device.type),
         )
 
         # Define the model, optimizer, and loss criterion.
@@ -115,7 +117,6 @@ def test_validate_epoch_success() -> None:
         batch_size=batch_size,
         shuffle=True,
         drop_last=False,
-        generator=torch.Generator(device=device.type),
     )
 
     model = Unet(

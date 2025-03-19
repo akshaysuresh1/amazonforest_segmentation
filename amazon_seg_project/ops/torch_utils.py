@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader
 from dagster import op, In, Out, Any
 import segmentation_models_pytorch as smp
 from .write_files import create_directories
-from ..resources import device
 
 
 @op(
@@ -44,8 +43,6 @@ def create_data_loaders(
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
 
-    generator = torch.Generator(device=device.type)
-
     train_loader = DataLoader(
         training_dset,
         shuffle=True,
@@ -53,7 +50,6 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
-        generator=generator,
     )
     val_loader = DataLoader(
         validation_dset,
@@ -62,7 +58,6 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
-        generator=generator,
     )
     return train_loader, val_loader
 
@@ -112,7 +107,7 @@ def train_epoch(
 
     Returns: Batch-averaged training loss for the epoch
     """
-    model.to(device)
+    model.to(train_device)
     model.train()
     summed_train_loss = 0.0
     n_training_samples = 0  # No. of training samples
@@ -121,7 +116,7 @@ def train_epoch(
         # Masks shape = (batch size, 1, height, weight)
         images, true_masks = batch
         # Move data to device.
-        images, true_masks = images.to(device), true_masks.to(train_device)
+        images, true_masks = images.to(train_device), true_masks.to(train_device)
         # Reset gradients to zero before each batch.
         optimizer.zero_grad()
         # Obtain model predictions on data.
@@ -163,7 +158,7 @@ def validate_epoch(
 
     Returns: Batch-averaged validation loss for the epoch
     """
-    model.to(device)
+    model.to(val_device)
     model.eval()
     summed_val_loss = 0.0
     n_val_samples = 0  # No. of validation samples
