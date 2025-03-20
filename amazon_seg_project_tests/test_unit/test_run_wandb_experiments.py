@@ -3,23 +3,27 @@ Unit tests for op "run_wandb_training"
 """
 
 from unittest.mock import patch, MagicMock
+from dagster import RunConfig
 from amazon_seg_project.assets import (
+    unet_model,
     data_training,
     data_validation,
     afs_training_dataset,
     afs_validation_dataset,
 )
-from amazon_seg_project.config import BasicUnetConfig, ModelTrainingConfig
+from amazon_seg_project.config import (
+    TrainingDatasetConfig,
+    BasicUnetConfig,
+    ModelTrainingConfig,
+)
 from amazon_seg_project.ops.wandb_utils import run_wandb_training
 
 
-@patch("amazon_seg_project.ops.wandb_utils.unet_model")
 @patch("amazon_seg_project.ops.wandb_utils.materialize_to_memory")
 @patch("amazon_seg_project.ops.wandb_utils.train_unet")
 def test_run_wandb_training(
     mock_train_unet: MagicMock,
-    mock_materialize: MagicMock,
-    mock_unet_model: MagicMock,
+    mock_materialize_to_memory: MagicMock,
 ) -> None:
     """
     Test execution of run_wandb_training() using mocked internal functions
@@ -36,6 +40,7 @@ def test_run_wandb_training(
 
     # Derivaties from test config
     assets = [
+        unet_model,
         data_training,
         data_validation,
         afs_training_dataset,
@@ -44,7 +49,21 @@ def test_run_wandb_training(
     encoder = test_config.encoder_name
     batch_size = test_config.batch_size
     lr_initial = test_config.lr_initial
-    mock_unet_config = BasicUnetConfig(encoder_name=test_config.encoder_name)
+
+    # Mock run config
+    mock_unet_config = BasicUnetConfig(
+        encoder_name=test_config.encoder_name, model_seed=test_config.seed
+    )
+    mock_train_dataset_config = TrainingDatasetConfig(
+        augmentation_seed=test_config.seed
+    )
+    mock_run_config = RunConfig(
+        {
+            "basic_unet_model": mock_unet_config,
+            "training_dataset": mock_train_dataset_config,
+        }
+    )
+
     mock_wandb_config = {
         "name": f"{encoder}_batch{batch_size}_lr{lr_initial}",
         "seed": test_config.seed,
@@ -55,12 +74,14 @@ def test_run_wandb_training(
     }
 
     # Create mocks.
-    mock_training_dataset = MagicMock(name="training_dataset")
-    mock_validation_dataset = MagicMock(name="validation_dataset")
-    mock_materialize.return_value = MagicMock(
+    mock_unet_model = MagicMock(name="mock_unet_model")
+    mock_training_dataset = MagicMock(name="mock_training_dataset")
+    mock_validation_dataset = MagicMock(name="mock_validation_dataset")
+    mock_materialize_to_memory.return_value = MagicMock(
         asset_value=lambda name: {  # pylint: disable=W0108
             "training_dataset": mock_training_dataset,
             "validation_dataset": mock_validation_dataset,
+            "basic_unet_model": mock_unet_model,
         }.get(name)
     )
 
@@ -68,10 +89,11 @@ def test_run_wandb_training(
     run_wandb_training(test_config)
 
     # Assertions
-    mock_unet_model.assert_called_once_with(mock_unet_config)
-
-    mock_materialize.assert_called_once_with(assets)
-    mock_result = mock_materialize.return_value
+    mock_materialize_to_memory.assert_called_once_with(
+        assets, run_config=mock_run_config
+    )
+    mock_result = mock_materialize_to_memory.return_value
+    assert mock_result.asset_value("basic_unet_model") == mock_unet_model
     assert mock_result.asset_value("training_dataset") == mock_training_dataset
     assert mock_result.asset_value("validation_dataset") == mock_validation_dataset
 
@@ -80,5 +102,5 @@ def test_run_wandb_training(
         mock_wandb_config,
         mock_training_dataset,
         mock_validation_dataset,
-        mock_unet_model.return_value,
+        mock_unet_model,
     )

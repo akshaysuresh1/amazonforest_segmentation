@@ -26,6 +26,7 @@ class BasicUnetConfig(Config):
     encoder_weights: str | None = Field(default="imagenet")
     in_channels: int = Field(default=4)
     activation: str = Field(default="sigmoid")
+    model_seed: int = Field(default=137)
 
 
 class ModelTrainingConfig(Config):
