@@ -13,20 +13,27 @@ from amazon_seg_project.config import TrainingDatasetConfig
 
 
 @patch("amazon_seg_project.assets.datasets.SegmentationDataset")
-def test_afs_training_dataset_success(mock_seg_dataset: MagicMock) -> None:
+@patch("amazon_seg_project.assets.datasets.get_aug_pipeline")
+def test_afs_training_dataset_success(
+    mock_get_aug_pipeline: MagicMock, mock_seg_dataset: MagicMock
+) -> None:
     """
     Test successful initialization of training dataset
     """
     # Define mock config and inputs.
     config = TrainingDatasetConfig(
-        horizontal_flip_prob=0.7, vertical_flip_prob=0.2, rotate90_prob=0.4
+        horizontal_flip_prob=0.7,
+        vertical_flip_prob=0.2,
+        rotate90_prob=0.4,
+        augmentation_seed=45,
     )
     mock_train_image_files = ["train/images/file1.tif", "train/images/file2.tif"]
     mock_train_mask_files = ["train/masks/file1.tif", "train/masks/file2.tif"]
-    # Set up mock output.
+    # Set up mock outputs.
     mock_train_dataset = MagicMock()
     mock_train_dataset.__len__.return_value = len(mock_train_image_files)
     mock_seg_dataset.return_value = mock_train_dataset
+    mock_get_aug_pipeline.return_value = "mocked_transform_function"
 
     # Call the test function.
     output_generator = afs_training_dataset(
@@ -35,16 +42,21 @@ def test_afs_training_dataset_success(mock_seg_dataset: MagicMock) -> None:
     # Exhaust the generator into a list.
     output = list(output_generator)  # type: ignore
 
+    # Assertion for mocked get_aug_pipeline()
+    mock_get_aug_pipeline.assert_called_once_with(
+        horizontal_flip_prob=config.horizontal_flip_prob,
+        vertical_flip_prob=config.vertical_flip_prob,
+        rotate90_prob=config.rotate90_prob,
+        augmentation_seed=config.augmentation_seed,
+    )
+
     # Assertion for mocked SegmentationDataset class
     mock_seg_dataset.assert_called_once_with(
         images_list=mock_train_image_files,
         masks_list=mock_train_mask_files,
         s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
-        do_aug=True,
-        horizontal_flip_prob=config.horizontal_flip_prob,
-        vertical_flip_prob=config.vertical_flip_prob,
-        rotate90_prob=config.rotate90_prob,
+        transform=mock_get_aug_pipeline.return_value,
     )
 
     # Assertions for output
@@ -80,7 +92,7 @@ def test_afs_validation_dataset_success(mock_seg_dataset: MagicMock) -> None:
         masks_list=mock_val_mask_files,
         s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
-        do_aug=False,
+        transform=None,
     )
 
     # Assertions for output

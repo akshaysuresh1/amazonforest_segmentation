@@ -7,6 +7,7 @@ import numpy.typing as npt
 from ..resources import ScalarTypeT
 
 
+# Avoid using the op decorator here to allow for module pickling.
 def robust_scaling(
     data: npt.NDArray[ScalarTypeT],
     means: npt.NDArray[ScalarTypeT] = np.array([622.59, 683.14, 436.69, 2951.97]),

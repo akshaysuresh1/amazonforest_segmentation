@@ -5,6 +5,7 @@ Unit tests for the __init__() and __len__() methods of SegmentationDataset class
 from unittest.mock import MagicMock
 import pytest
 from amazon_seg_project.assets import SegmentationDataset
+from amazon_seg_project.ops.aug_utils import get_aug_pipeline
 
 
 def test_seg_dataset_creation_success() -> None:
@@ -16,7 +17,6 @@ def test_seg_dataset_creation_success() -> None:
     masks_list = ["mask1.tif", "mask2.tif"]
     mock_s3_bucket = "test-bucket"
     mock_scaling_func = MagicMock()
-    do_aug = True
     horizontal_flip_probability = 0.25
     vertical_flip_probability = 0.15
     rotate90_probability = 0.05
@@ -27,10 +27,11 @@ def test_seg_dataset_creation_success() -> None:
         masks_list=masks_list,
         s3_bucket=mock_s3_bucket,
         scaling_func=mock_scaling_func,
-        do_aug=do_aug,
-        horizontal_flip_prob=horizontal_flip_probability,
-        vertical_flip_prob=vertical_flip_probability,
-        rotate90_prob=rotate90_probability,
+        transform=get_aug_pipeline(
+            horizontal_flip_prob=horizontal_flip_probability,
+            vertical_flip_prob=vertical_flip_probability,
+            rotate90_prob=rotate90_probability,
+        ),
     )
 
     # Assertions for instance attributes
@@ -38,10 +39,18 @@ def test_seg_dataset_creation_success() -> None:
     assert dataset.masks == masks_list
     assert dataset.s3_bucket == mock_s3_bucket
     assert dataset.scaling_func == mock_scaling_func
-    assert dataset.do_aug == do_aug
-    assert dataset.horizontal_flip_prob == horizontal_flip_probability
-    assert dataset.vertical_flip_prob == vertical_flip_probability
-    assert dataset.rotate90_prob == rotate90_probability
+    assert (
+        dataset.transform is not None
+        and dataset.transform.transforms[0].p == horizontal_flip_probability
+    )
+    assert (
+        dataset.transform is not None
+        and dataset.transform.transforms[1].p == vertical_flip_probability
+    )
+    assert (
+        dataset.transform is not None
+        and dataset.transform.transforms[2].p == rotate90_probability
+    )
 
 
 def test_seg_dataset_creation_length_error() -> None:

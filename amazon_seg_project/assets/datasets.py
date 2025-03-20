@@ -6,6 +6,7 @@ from typing import List, Generator
 from dagster import asset, AssetIn, Output
 from . import SegmentationDataset
 from ..config import TrainingDatasetConfig
+from ..ops.aug_utils import get_aug_pipeline
 from ..ops.scaling_utils import robust_scaling
 from ..resources import AMAZON_TIF_BUCKET
 
@@ -27,10 +28,12 @@ def afs_training_dataset(
         masks_list=train_mask_files,
         s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
-        do_aug=True,
-        horizontal_flip_prob=config.horizontal_flip_prob,
-        vertical_flip_prob=config.vertical_flip_prob,
-        rotate90_prob=config.rotate90_prob,
+        transform=get_aug_pipeline(
+            horizontal_flip_prob=config.horizontal_flip_prob,
+            vertical_flip_prob=config.vertical_flip_prob,
+            rotate90_prob=config.rotate90_prob,
+            augmentation_seed=config.augmentation_seed,
+        ),
     )
     yield Output(
         training_dataset, metadata={"Training dataset length": len(training_dataset)}
@@ -53,7 +56,7 @@ def afs_validation_dataset(
         masks_list=val_mask_files,
         s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
         scaling_func=robust_scaling,
-        do_aug=False,
+        transform=None,
     )
     yield Output(
         validation_dataset,

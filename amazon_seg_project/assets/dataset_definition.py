@@ -23,10 +23,7 @@ class SegmentationDataset(Dataset):
         masks_list: List[str],
         s3_bucket: str,
         scaling_func: Callable = robust_scaling,
-        do_aug: bool = False,
-        horizontal_flip_prob: float = 0.5,
-        vertical_flip_prob: float = 0.5,
-        rotate90_prob: float = 0.5,
+        transform: A.Compose | None = None,
     ) -> None:
         """
         Initialize a SegmentationDataset object.
@@ -36,10 +33,7 @@ class SegmentationDataset(Dataset):
             masks_list: List of segmentation masks corresponding to images in "images_list"
             s3_bucket: Name of S3 bucket containing images and masks
             scaling_func: Scaling function to be applied to image (d: robust_scaling)
-            do_aug: Boolean flag to turn on/off data augmentation (d: False)
-            horizontal_flip_prob: Horizontal flip probability (d: 0.5)
-            vertical_flip_prob: Vertical flip probability (d: 0.5)
-            rotate90_prob: Probability for image rotation by a multiple of 90 deg. (d: 0.5)
+            transform: Augmentation pipeline
         """
         if len(images_list) != len(masks_list):
             raise ValueError("Unequal numbers of images and masks supplied.")
@@ -48,10 +42,7 @@ class SegmentationDataset(Dataset):
         self.masks = masks_list
         self.s3_bucket = s3_bucket
         self.scaling_func = scaling_func
-        self.do_aug = do_aug
-        self.horizontal_flip_prob = horizontal_flip_prob
-        self.vertical_flip_prob = vertical_flip_prob
-        self.rotate90_prob = rotate90_prob
+        self.transform = transform
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -87,16 +78,9 @@ class SegmentationDataset(Dataset):
         # Scale image appropriately for deep learning.
         image = self.scaling_func(image)
 
-        if self.do_aug:
-            transform = A.Compose(
-                [
-                    A.HorizontalFlip(p=self.horizontal_flip_prob),
-                    A.VerticalFlip(p=self.vertical_flip_prob),
-                    A.RandomRotate90(p=self.rotate90_prob),
-                ]
-            )
+        if self.transform:
             # Apply transformation to both image and mask.
-            transformed_products = transform(image=image, mask=mask)
+            transformed_products = self.transform(image=image, mask=mask)
             image = transformed_products["image"]
             mask = transformed_products["mask"]
 

@@ -14,6 +14,7 @@ class TrainingDatasetConfig(Config):
     horizontal_flip_prob: float = Field(default=0.5)
     vertical_flip_prob: float = Field(default=0.5)
     rotate90_prob: float = Field(default=0.5)
+    augmentation_seed: int = Field(default=137)
 
 
 class BasicUnetConfig(Config):

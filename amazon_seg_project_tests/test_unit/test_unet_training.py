@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock, call
 from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import SegmentationDataset
 from amazon_seg_project.data_paths import OUTPUT_PATH
+from amazon_seg_project.ops.aug_utils import get_aug_pipeline
 from amazon_seg_project.ops.wandb_utils import train_unet
 from amazon_seg_project.resources import device
 
@@ -43,10 +44,16 @@ def test_single_epoch_training(
         "max_epochs": 1,
     }
     training_dataset = SegmentationDataset(
-        images_list=[], masks_list=[], s3_bucket="", do_aug=True
+        images_list=[],
+        masks_list=[],
+        s3_bucket="",
+        transform=get_aug_pipeline(),
     )
     validation_dataset = SegmentationDataset(
-        images_list=[], masks_list=[], s3_bucket="", do_aug=False
+        images_list=[],
+        masks_list=[],
+        s3_bucket="",
+        transform=None,
     )
     model = Unet(
         encoder_name=wandb_config["encoder_name"],
@@ -142,10 +149,16 @@ def test_early_stopping(
         "max_epochs": 8,
     }
     training_dataset = SegmentationDataset(
-        images_list=[], masks_list=[], s3_bucket="", do_aug=True
+        images_list=[],
+        masks_list=[],
+        s3_bucket="",
+        transform=get_aug_pipeline(),
     )
     validation_dataset = SegmentationDataset(
-        images_list=[], masks_list=[], s3_bucket="", do_aug=False
+        images_list=[],
+        masks_list=[],
+        s3_bucket="",
+        transform=None,
     )
     model = Unet(
         encoder_name=wandb_config["encoder_name"],

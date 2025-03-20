@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 import boto3
 from moto import mock_aws
+from amazon_seg_project.ops.aug_utils import get_aug_pipeline
 from amazon_seg_project.ops.tif_utils import simulate_mock_multispec_data
 from amazon_seg_project.assets import SegmentationDataset
 from amazon_seg_project.resources import torch
@@ -176,12 +177,12 @@ def test_seg_dataset_getitem_valid_without_aug(mock_s3_resource: MagicMock) -> N
     output_image, output_mask = seg_dataset[index]
 
     # Verify that outputs match expected results.
-    assert torch.equal(
-        output_image, expected_image
-    ), "Output image does not match expected image."
-    assert torch.equal(
-        output_mask, expected_mask
-    ), "Output mask does not match expected mask."
+    assert torch.equal(output_image, expected_image), (
+        "Output image does not match expected image."
+    )
+    assert torch.equal(output_mask, expected_mask), (
+        "Output mask does not match expected mask."
+    )
 
 
 @mock_aws
@@ -241,20 +242,19 @@ def test_seg_dataset_getitem_valid_horizontal_flip(mock_s3_resource: MagicMock) 
         masks_list=masks_list,
         s3_bucket=s3_bucket,
         scaling_func=lambda x: x,
-        do_aug=True,
-        horizontal_flip_prob=1.0,
-        vertical_flip_prob=0.0,
-        rotate90_prob=0.0,
+        transform=get_aug_pipeline(
+            horizontal_flip_prob=1.0, vertical_flip_prob=0.0, rotate90_prob=0.0
+        ),
     )
     output_image, output_mask = seg_dataset[index]
 
     # Verify that outputs match expected results.
-    assert torch.equal(
-        output_image, expected_image
-    ), "Output image does not match expected image."
-    assert torch.equal(
-        output_mask, expected_mask
-    ), "Output mask does not match expected mask."
+    assert torch.equal(output_image, expected_image), (
+        "Output image does not match expected image."
+    )
+    assert torch.equal(output_mask, expected_mask), (
+        "Output mask does not match expected mask."
+    )
 
 
 @mock_aws
@@ -314,20 +314,19 @@ def test_seg_dataset_getitem_valid_vertical_flip(mock_s3_resource: MagicMock) ->
         masks_list=masks_list,
         s3_bucket=s3_bucket,
         scaling_func=lambda x: x,
-        do_aug=True,
-        horizontal_flip_prob=0.0,
-        vertical_flip_prob=1.0,
-        rotate90_prob=0.0,
+        transform=get_aug_pipeline(
+            horizontal_flip_prob=0.0, vertical_flip_prob=1.0, rotate90_prob=0.0
+        ),
     )
     output_image, output_mask = seg_dataset[index]
 
     # Verify that outputs match expected results.
-    assert torch.equal(
-        output_image, expected_image
-    ), "Output image does not match expected image."
-    assert torch.equal(
-        output_mask, expected_mask
-    ), "Output mask does not match expected mask."
+    assert torch.equal(output_image, expected_image), (
+        "Output image does not match expected image."
+    )
+    assert torch.equal(output_mask, expected_mask), (
+        "Output mask does not match expected mask."
+    )
 
 
 @mock_aws
@@ -393,10 +392,9 @@ def test_seg_dataset_getitem_valid_rotate90_aug(mock_s3_resource: MagicMock) -> 
         masks_list=masks_list,
         s3_bucket=s3_bucket,
         scaling_func=lambda x: x,
-        do_aug=True,
-        horizontal_flip_prob=0.0,
-        vertical_flip_prob=0.0,
-        rotate90_prob=1.0,
+        transform=get_aug_pipeline(
+            horizontal_flip_prob=0.0, vertical_flip_prob=0.0, rotate90_prob=1.0
+        ),
     )
     output_image, output_mask = seg_dataset[index]
 
