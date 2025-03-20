@@ -9,6 +9,7 @@ import torch
 from torch import optim
 from torch.utils.data import Dataset, RandomSampler, SequentialSampler
 from amazon_seg_project.ops.torch_utils import (
+    worker_seed_fn,
     create_data_loaders,
     setup_adam_w,
     save_model_weights,
@@ -28,6 +29,27 @@ class DummyDataset(Dataset):
 
     def __getitem__(self, idx: int) -> int:
         return idx
+
+
+@patch("random.seed")
+@patch("numpy.random.seed")
+@patch("torch.manual_seed")
+def test_worker_seed_fn_setup(
+    mock_torch_seed: MagicMock, mock_numpy_seed: MagicMock, mock_random_seed: MagicMock
+) -> None:
+    """
+    Test correct setup of worker_seed_fn().
+    """
+    worker_id = 3
+    seed = torch.initial_seed() % 2**32 + worker_id
+
+    # Call the test function.
+    worker_seed_fn(3)
+
+    # Assert seed initializations.
+    mock_numpy_seed.assert_called_once_with(seed)
+    mock_random_seed.assert_called_once_with(seed)
+    mock_torch_seed.assert_called_once_with(seed)
 
 
 def test_create_data_loaders_default_inputs() -> None:
@@ -60,6 +82,14 @@ def test_create_data_loaders_default_inputs() -> None:
     assert train_loader.num_workers == os.cpu_count()
     assert val_loader.num_workers == os.cpu_count()
 
+    # Assert for worker_init_fn.
+    assert train_loader.worker_init_fn == worker_seed_fn
+    assert val_loader.worker_init_fn == worker_seed_fn
+
+    # Check generator seed.
+    assert train_loader.generator.initial_seed() == 137
+    assert val_loader.generator.initial_seed() == 137
+
 
 def test_create_data_loaders_custom_inputs() -> None:
     """
@@ -69,10 +99,15 @@ def test_create_data_loaders_custom_inputs() -> None:
     val_dataset = DummyDataset(50)
     batch_size = 32
     num_workers = -8
+    generator_seed = 28
 
     # Call the test function.
     train_loader, val_loader = create_data_loaders(
-        train_dataset, val_dataset, batch_size=batch_size, num_workers=num_workers
+        train_dataset,
+        val_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        seed=generator_seed,
     )
 
     # Verify default batch size.
@@ -94,6 +129,14 @@ def test_create_data_loaders_custom_inputs() -> None:
     # Assert correct number of workers for both loaders.
     assert train_loader.num_workers == os.cpu_count()
     assert val_loader.num_workers == os.cpu_count()
+
+    # Assert for worker_init_fn.
+    assert train_loader.worker_init_fn == worker_seed_fn
+    assert val_loader.worker_init_fn == worker_seed_fn
+
+    # Check generator seed.
+    assert train_loader.generator.initial_seed() == generator_seed
+    assert val_loader.generator.initial_seed() == generator_seed
 
 
 def test_setup_adam_w_default_lr() -> None:

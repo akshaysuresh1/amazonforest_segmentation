@@ -11,7 +11,7 @@ from amazon_seg_project.ops.wandb_utils import run_wandb_training
 
 # Define custom config for run.
 train_config = ModelTrainingConfig(
-    seed=43, encoder_name="resnet50", batch_size=32, lr_initial=1.0e-5, max_epochs=20
+    seed=43, encoder_name="resnet50", batch_size=32, lr_initial=1.0e-5, max_epochs=2
 )
 
 # Execute the job programmatically.

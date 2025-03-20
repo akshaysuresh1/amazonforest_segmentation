@@ -53,17 +53,25 @@ def train_unet(
     with wandb.init(project=project_name, config=wandb_config) as run:
         # If called by wandb.agent, this config will be set by Sweep Controller.
         config = run.config
+        seed = config["seed"]
         encoder = config["encoder_name"]
         batch_size = config["batch_size"]
         lr_initial = config["lr_initial"]
-        torch.manual_seed(config["seed"])
+
+        # Set PyTorch seed.
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
 
         # Move model to device.
         model = model.to(device)
 
         # Create data loaders for training and validation.
         train_loader, val_loader = create_data_loaders(
-            training_dset, validation_dset, batch_size=batch_size
+            training_dset,
+            validation_dset,
+            batch_size=batch_size,
+            seed=seed,
         )
 
         # Set up optimizer and loss criterion.

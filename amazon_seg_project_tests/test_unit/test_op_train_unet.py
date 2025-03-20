@@ -1,5 +1,5 @@
 """
-Unit test for op "unet_training_experiment"
+Unit test for op "train_unet"
 """
 
 from typing import List, Any
@@ -19,11 +19,15 @@ from amazon_seg_project.resources import device
 @patch("amazon_seg_project.ops.wandb_utils.dice_loss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("torch.cuda.manual_seed_all")
+@patch("torch.cuda.manual_seed")
 @patch("torch.manual_seed")
 @patch("wandb.init")
 def test_single_epoch_training(
     mock_wandb_init: MagicMock,
-    mock_torch_seed: MagicMock,
+    mock_torch_manual_seed: MagicMock,
+    mock_torch_cuda_seed: MagicMock,
+    mock_torch_cuda_all_seed: MagicMock,
     mock_create_data_loaders: MagicMock,
     mock_adamw_optimizer: MagicMock,
     mock_dice_loss: MagicMock,
@@ -89,10 +93,15 @@ def test_single_epoch_training(
 
     # Assertions
     mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
-    mock_torch_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_manual_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_cuda_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_cuda_all_seed.assert_called_once_with(wandb_config["seed"])
     assert next(model.parameters()).device.type == device.type
     mock_create_data_loaders.assert_called_once_with(
-        training_dataset, validation_dataset, batch_size=batch_size
+        training_dataset,
+        validation_dataset,
+        batch_size=batch_size,
+        seed=wandb_config["seed"],
     )
     mock_adamw_optimizer.assert_called_once_with(model, lr_initial=lr_initial)
     mock_run.watch.assert_called_once_with(model)
@@ -124,11 +133,15 @@ def test_single_epoch_training(
 @patch("amazon_seg_project.ops.wandb_utils.dice_loss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("torch.cuda.manual_seed_all")
+@patch("torch.cuda.manual_seed")
 @patch("torch.manual_seed")
 @patch("wandb.init")
 def test_early_stopping(
     mock_wandb_init: MagicMock,
-    mock_torch_seed: MagicMock,
+    mock_torch_manual_seed: MagicMock,
+    mock_torch_cuda_seed: MagicMock,
+    mock_torch_cuda_all_seed: MagicMock,
     mock_create_data_loaders: MagicMock,
     mock_adamw_optimizer: MagicMock,
     mock_dice_loss: MagicMock,
@@ -194,10 +207,15 @@ def test_early_stopping(
 
     # Assertions
     mock_wandb_init.assert_called_once_with(project="mock_project", config=wandb_config)
-    mock_torch_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_manual_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_cuda_seed.assert_called_once_with(wandb_config["seed"])
+    mock_torch_cuda_all_seed.assert_called_once_with(wandb_config["seed"])
     assert next(model.parameters()).device.type == device.type
     mock_create_data_loaders.assert_called_once_with(
-        training_dataset, validation_dataset, batch_size=batch_size
+        training_dataset,
+        validation_dataset,
+        batch_size=batch_size,
+        seed=wandb_config["seed"],
     )
     mock_adamw_optimizer.assert_called_once_with(model, lr_initial=lr_initial)
     mock_run.watch.assert_called_once_with(model)

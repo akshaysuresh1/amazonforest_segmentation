@@ -3,14 +3,32 @@ Utility functions for model training, validation, and inference
 """
 
 import os
+import random
 import logging
 from typing import Tuple, Union
+import numpy as np
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
 from dagster import op, In, Out, Any
 import segmentation_models_pytorch as smp
 from .write_files import create_directories
+
+
+def worker_seed_fn(worker_id: int) -> None:
+    """
+    Initializes a worker's random seed based on worker_id.
+
+    Args:
+        worker_id (int): The ID of the worker, which ensures a unique seed.
+    """
+    # Use the worker_id to ensure different seeds for each worker
+    seed = (
+        torch.initial_seed() % 2**32 + worker_id
+    )  # Ensures a unique seed for each worker.
+    np.random.seed(seed)  # Set the seed for NumPy's random generator.
+    random.seed(seed)  # Set the seed for Python's random module.
+    torch.manual_seed(seed)  # Set PyTorch's seed for the worker.
 
 
 @op(
@@ -27,6 +45,7 @@ def create_data_loaders(
     validation_dset: Any,
     batch_size: int = 8,
     num_workers: int = 0,
+    seed: int = 137,
 ) -> Tuple[DataLoader, DataLoader]:
     """
     Creates data loaders for training and validation datasets.
@@ -36,12 +55,17 @@ def create_data_loaders(
         validation_dset: Validation dataset
         batch_size: Batch size for the data loaders
         num_workers: Number of workers for data loading (defaults to os.cpu_count())
+        seed: Seed for generator
 
     Returns: Training and validation data loaders
     """
     max_workers = os.cpu_count() or 1
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
+    
+    # Set manual seed for generator.
+    generator = torch.Generator()
+    generator.manual_seed(seed)
 
     train_loader = DataLoader(
         training_dset,
@@ -50,6 +74,8 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
+        worker_init_fn=worker_seed_fn,
+        generator=generator,
     )
     val_loader = DataLoader(
         validation_dset,
@@ -58,6 +84,8 @@ def create_data_loaders(
         batch_size=batch_size,
         pin_memory=True,
         num_workers=num_workers,
+        worker_init_fn=worker_seed_fn,
+        generator=generator,
     )
     return train_loader, val_loader
 
