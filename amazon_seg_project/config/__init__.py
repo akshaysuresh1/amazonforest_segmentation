@@ -2,6 +2,7 @@
 Config schema for asset definitions
 """
 
+from typing import Dict, Any
 from dagster import Config
 from pydantic import Field
 
@@ -29,16 +30,23 @@ class BasicUnetConfig(Config):
     model_seed: int = Field(default=137)
 
 
-class ModelTrainingConfig(Config):
+class SweepConfig(Config):
     """
-    Configurable parameters for a W&B model training run
+    Configurable parameters for a W&B sweep
     """
 
-    # W&B settings
     project: str = Field(default="amazonforest_segmentation")
-    # ML parameters
-    seed: int = Field(default=227)
-    batch_size: int = Field(default=8)
-    lr_initial: float = Field(default=1.0e-5)
-    max_epochs: int = Field(default=10)
-    encoder_name: str = Field(default="resnet50")
+    # Optimization method and metrics
+    method: str = Field(default="grid")
+    metric_name: str = Field(default="val_loss")
+    metric_goal: str = Field(default="minimize")
+    # Model training arameters
+    seed: Dict[str, Any] = Field(default={"values": [43]})
+    encoder_name: Dict[str, Any] = Field(default={"values": ["resnet50"]})
+    batch_size: Dict[str, Any] = Field(default={"values": [4]})
+    lr_initial: Dict[str, Any] = Field(default={"values": [1.0e-4]})
+    max_epochs: Dict[str, Any] = Field(default={"values": [10]})
+    # Data augmentation parameters
+    horizontal_flip_prob: Dict[str, Any] = Field(default={"values": [0.5]})
+    vertical_flip_prob: Dict[str, Any] = Field(default={"values": [0.5]})
+    rotate90_prob: Dict[str, Any] = Field(default={"values": [0.5]})
