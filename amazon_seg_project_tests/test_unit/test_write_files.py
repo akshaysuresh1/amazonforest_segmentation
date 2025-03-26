@@ -191,17 +191,19 @@ def test_write_loss_data_valid_filename(
 
     args, kwargs = mock_df.call_args[0], mock_df.call_args[1]
     actual_contents = args[0]
-    assert (
-        actual_contents.keys() == expected_contents.keys()
-    ), "Dictionary keys do not match"
+    assert actual_contents.keys() == expected_contents.keys(), (
+        "Dictionary keys do not match"
+    )
 
     for key, expected_value in expected_contents.items():
-        assert np.array_equal(
-            expected_value, expected_contents[key]
-        ), f"Array values for key '{key}' do not match."
+        assert np.array_equal(expected_value, expected_contents[key]), (
+            f"Array values for key '{key}' do not match."
+        )
 
     # Compare the 'index' keyword argument.
-    assert np.array_equal(kwargs["index"], index_array), "Index array does not match."
+    assert np.array_equal(kwargs.get("index"), index_array), (
+        "Index array does not match."
+    )
 
     # Assert that to_csv() method of pd.DataFrame was called with the correct arguments.
     mock_df_instance.to_csv.assert_called_once_with(str(outcsv), index=False)
@@ -242,14 +244,14 @@ def test_write_loss_data_incomplete_filename(
 
     args, kwargs = mock_df.call_args[0], mock_df.call_args[1]
     actual_contents = args[0]
-    assert (
-        actual_contents.keys() == expected_contents.keys()
-    ), "Dictionary keys do not match"
+    assert actual_contents.keys() == expected_contents.keys(), (
+        "Dictionary keys do not match"
+    )
 
     for key, expected_value in expected_contents.items():
-        assert np.array_equal(
-            expected_value, expected_contents[key]
-        ), f"Array values for key '{key}' do not match."
+        assert np.array_equal(expected_value, expected_contents[key]), (
+            f"Array values for key '{key}' do not match."
+        )
 
     # Compare the 'index' keyword argument.
     assert np.array_equal(kwargs["index"], index_array), "Index array does not match."

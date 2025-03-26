@@ -100,7 +100,7 @@ def load_tif_from_s3(
         raise AttributeError(f"Failed to fetch {object_key} from S3.") from exc
 
     if "Body" in response:
-        tif_bytes = response["Body"].read()
+        tif_bytes = response.get("Body").read()
         if not tif_bytes:
             raise ValueError(f"Empty dataset in {object_key}")
         dataset = rxr.open_rasterio(BytesIO(tif_bytes))

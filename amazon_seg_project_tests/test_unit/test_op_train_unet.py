@@ -49,10 +49,10 @@ def test_single_epoch_training(
     mock_wandb_run.config = mock_wandb_config
 
     # Define datasets and model.
-    seed = mock_wandb_config["seed"]
-    encoder = mock_wandb_config["encoder_name"]
-    batch_size = mock_wandb_config["batch_size"]
-    lr_initial = mock_wandb_config["lr_initial"]
+    seed = mock_wandb_config.get("seed")
+    encoder = mock_wandb_config.get("encoder_name")
+    batch_size = mock_wandb_config.get("batch_size")
+    lr_initial = mock_wandb_config.get("lr_initial")
     weights_file = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt"
     losscurve_csv = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_losscurve.csv"
     training_dataset = SegmentationDataset(
@@ -68,7 +68,7 @@ def test_single_epoch_training(
         transform=None,
     )
     model = Unet(
-        encoder_name=mock_wandb_config["encoder_name"],
+        encoder_name=mock_wandb_config.get("encoder_name"),
         encoder_weights=None,
         in_channels=4,
         activation="sigmoid",
@@ -161,10 +161,10 @@ def test_early_stopping(
     mock_wandb_run.config = mock_wandb_config
 
     # Define datasets and model.
-    seed = mock_wandb_config["seed"]
-    encoder = mock_wandb_config["encoder_name"]
-    batch_size = mock_wandb_config["batch_size"]
-    lr_initial = mock_wandb_config["lr_initial"]
+    seed = mock_wandb_config.get("seed")
+    encoder = mock_wandb_config.get("encoder_name")
+    batch_size = mock_wandb_config.get("batch_size")
+    lr_initial = mock_wandb_config.get("lr_initial")
     weights_file = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt"
     losscurve_csv = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_losscurve.csv"
     training_dataset = SegmentationDataset(
@@ -180,7 +180,7 @@ def test_early_stopping(
         transform=None,
     )
     model = Unet(
-        encoder_name=mock_wandb_config["encoder_name"],
+        encoder_name=mock_wandb_config.get("encoder_name"),
         encoder_weights=None,
         in_channels=4,
         activation="sigmoid",

@@ -35,6 +35,7 @@ class SweepConfig(Config):
     Configurable parameters for a W&B sweep
     """
 
+    entity: str = Field(default="akshaysuresh1")
     project: str = Field(default="amazonforest_segmentation")
     # Optimization method and metrics
     method: str = Field(default="grid")

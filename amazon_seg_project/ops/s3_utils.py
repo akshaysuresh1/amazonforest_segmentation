@@ -46,10 +46,10 @@ def filter_object_keys(
     for page in pages:
         if "Contents" in page:
             for obj in page["Contents"]:
-                if (not obj["Key"].endswith("/")) and (
-                    obj["Key"].endswith(file_extension)
+                if (not obj.get("Key").endswith("/")) and (
+                    obj.get("Key").endswith(file_extension)
                 ):
-                    object_keys.append(obj["Key"])
+                    object_keys.append(obj.get("Key"))
     return object_keys
 
 
@@ -77,8 +77,8 @@ def list_objects(
     except ClientError as e:
         logging.error(
             "S3 ClientError: %s - %s",
-            e.response["Error"]["Message"],
-            e.response["Error"]["Message"],
+            e.response.get("Error").get("Message"),
+            e.response.get("Error").get("Message"),
         )
         # Re-raise the ClientError exception after logging it
         raise

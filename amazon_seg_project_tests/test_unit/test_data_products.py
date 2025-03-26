@@ -57,7 +57,7 @@ def test_training_data_success(mock_load_labeled_data: MagicMock) -> None:
     assert outputs[0].value == mock_train_image_files, (
         f"Expected output: {mock_train_image_files}, Actual output: {outputs[0].value}'"
     )
-    assert outputs[0].metadata["Count of images"].value == len(
+    assert outputs[0].metadata.get("Count of images").value == len(
         mock_train_image_files
     ), f"""Expected image count = {len(mock_train_image_files)},
         Actual image count = {len(outputs[0].value)}"""
@@ -69,7 +69,7 @@ def test_training_data_success(mock_load_labeled_data: MagicMock) -> None:
     assert outputs[1].value == mock_train_mask_files, (
         f"Expected output: {mock_train_mask_files}, Actual output: {outputs[1].value}'"
     )
-    assert outputs[1].metadata["Count of masks"].value == len(
+    assert outputs[1].metadata.get("Count of masks").value == len(
         mock_train_mask_files
     ), f"""Expected image count = {len(mock_train_mask_files)},
         Actual image count = {len(outputs[1].value)}"""
@@ -131,7 +131,7 @@ def test_validation_data_success(mock_load_labeled_data: MagicMock) -> None:
     assert outputs[0].value == mock_val_image_files, (
         f"Expected output: {mock_val_image_files}, Actual output: {outputs[0].value}'"
     )
-    assert outputs[0].metadata["Count of images"].value == len(
+    assert outputs[0].metadata.get("Count of images").value == len(
         mock_val_image_files
     ), f"""Expected image count = {len(mock_val_image_files)},
         Actual image count = {len(outputs[0].value)}"""
@@ -143,7 +143,7 @@ def test_validation_data_success(mock_load_labeled_data: MagicMock) -> None:
     assert outputs[1].value == mock_val_mask_files, (
         f"Expected output: {mock_val_mask_files}, Actual output: {outputs[1].value}'"
     )
-    assert outputs[1].metadata["Count of masks"].value == len(
+    assert outputs[1].metadata.get("Count of masks").value == len(
         mock_val_mask_files
     ), f"""Expected image count = {len(mock_val_mask_files)},
         Actual image count = {len(outputs[1].value)}"""
@@ -191,7 +191,7 @@ def test_testdata_success(mock_list_objects: MagicMock) -> None:
         output[0].value == mock_test_image_files
     ), f"""Expected output: {mock_test_image_files},
         Actual output: {output[0].value}"""
-    assert output[0].metadata["Count of images"].value == len(
+    assert output[0].metadata.get("Count of images").value == len(
         mock_test_image_files
     ), f"""Expected image count = {len(mock_test_image_files)},
         Actual image count = {len(output[0].value)}"""

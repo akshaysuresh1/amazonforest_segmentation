@@ -23,24 +23,37 @@ def test_make_sweep_config_default_values() -> None:
     output_sweep_config = make_sweep_config(test_config)
 
     # Assertions
-    assert output_sweep_config["method"] == test_config.method
-    assert output_sweep_config["metric"]["name"] == test_config.metric_name
-    assert output_sweep_config["metric"]["goal"] == test_config.metric_goal
-    assert output_sweep_config["parameters"]["seed"] == test_config.seed
-    assert output_sweep_config["parameters"]["encoder_name"] == test_config.encoder_name
-    assert output_sweep_config["parameters"]["batch_size"] == test_config.batch_size
-    assert output_sweep_config["parameters"]["lr_initial"] == test_config.lr_initial
-    assert output_sweep_config["parameters"]["max_epochs"] == test_config.max_epochs
+    assert output_sweep_config.get("method") == test_config.method
+    assert output_sweep_config.get("metric").get("name") == test_config.metric_name
+    assert output_sweep_config.get("metric").get("goal") == test_config.metric_goal
+    assert output_sweep_config.get("parameters").get("seed") == test_config.seed
     assert (
-        output_sweep_config["parameters"]["horizontal_flip_prob"]
+        output_sweep_config.get("parameters").get("encoder_name")
+        == test_config.encoder_name
+    )
+    assert (
+        output_sweep_config.get("parameters").get("batch_size")
+        == test_config.batch_size
+    )
+    assert (
+        output_sweep_config.get("parameters").get("lr_initial")
+        == test_config.lr_initial
+    )
+    assert (
+        output_sweep_config.get("parameters").get("max_epochs")
+        == test_config.max_epochs
+    )
+    assert (
+        output_sweep_config.get("parameters").get("horizontal_flip_prob")
         == test_config.horizontal_flip_prob
     )
     assert (
-        output_sweep_config["parameters"]["vertical_flip_prob"]
+        output_sweep_config.get("parameters").get("vertical_flip_prob")
         == test_config.vertical_flip_prob
     )
     assert (
-        output_sweep_config["parameters"]["rotate90_prob"] == test_config.rotate90_prob
+        output_sweep_config.get("parameters").get("rotate90_prob")
+        == test_config.rotate90_prob
     )
 
 
@@ -66,48 +79,64 @@ def test_make_sweep_config_custom_values() -> None:
     output_sweep_config = make_sweep_config(test_config)
 
     # Assertions
-    assert output_sweep_config["method"] == test_config.method
-    assert output_sweep_config["metric"]["name"] == test_config.metric_name
-    assert output_sweep_config["metric"]["goal"] == test_config.metric_goal
-    assert output_sweep_config["parameters"]["seed"] == test_config.seed
-    assert output_sweep_config["parameters"]["encoder_name"] == test_config.encoder_name
-    assert output_sweep_config["parameters"]["batch_size"] == test_config.batch_size
-    assert output_sweep_config["parameters"]["lr_initial"] == test_config.lr_initial
-    assert output_sweep_config["parameters"]["max_epochs"] == test_config.max_epochs
+    assert output_sweep_config.get("method") == test_config.method
+    assert output_sweep_config.get("metric").get("name") == test_config.metric_name
+    assert output_sweep_config.get("metric").get("goal") == test_config.metric_goal
+    assert output_sweep_config.get("parameters").get("seed") == test_config.seed
     assert (
-        output_sweep_config["parameters"]["horizontal_flip_prob"]
+        output_sweep_config.get("parameters").get("encoder_name")
+        == test_config.encoder_name
+    )
+    assert (
+        output_sweep_config.get("parameters").get("batch_size")
+        == test_config.batch_size
+    )
+    assert (
+        output_sweep_config.get("parameters").get("lr_initial")
+        == test_config.lr_initial
+    )
+    assert (
+        output_sweep_config.get("parameters").get("max_epochs")
+        == test_config.max_epochs
+    )
+    assert (
+        output_sweep_config.get("parameters").get("horizontal_flip_prob")
         == test_config.horizontal_flip_prob
     )
     assert (
-        output_sweep_config["parameters"]["vertical_flip_prob"]
+        output_sweep_config.get("parameters").get("vertical_flip_prob")
         == test_config.vertical_flip_prob
     )
     assert (
-        output_sweep_config["parameters"]["rotate90_prob"] == test_config.rotate90_prob
+        output_sweep_config.get("parameters").get("rotate90_prob")
+        == test_config.rotate90_prob
     )
 
 
+@patch("pathlib.Path.exists", return_value=True)
+@patch("wandb.log_artifact")
 @patch("wandb.Artifact")
 @patch("wandb.Api")
-@patch("wandb.init")
-def test_upload_best_model_to_wandb(
-    mock_wandb_init: MagicMock,
+def test_upload_best_model_to_wandb_success(
     mock_wandb_api: MagicMock,
     mock_wandb_artifact: MagicMock,
+    mock_wandb_log_artifact: MagicMock,
+    mock_weights_file_exists: MagicMock,
 ) -> None:
     """
     Test successful execution of upload_best_model_to_wandb().
     """
     # Set up mock W&B run.
+    entity = "test-organization"
     project = "test_project"
     sweep_id = "test_id"
-    mock_run = MagicMock(name="w&b run")
-    mock_wandb_init.return_value.__enter__.return_value = mock_run
 
+    # Set up mocks for wandb.Api() and wandb.Api().sweep().
     api = MagicMock(name="wandb-api")
+    mock_wandb_api.return_value = api
+
     sweep = MagicMock(name="wandb-sweep")
     api.sweep.return_value = sweep
-    mock_wandb_api.return_value = api
 
     # Mock runs
     run1 = MagicMock(name="run 1")
@@ -126,33 +155,32 @@ def test_upload_best_model_to_wandb(
     mock_wandb_artifact.return_value = artifact
 
     # Call the test function.
-    upload_best_model_to_wandb(project, sweep_id)
+    upload_best_model_to_wandb(entity, project, sweep_id)
 
     # Assertions
     mock_wandb_api.assert_called_once()
     api.sweep.assert_called_once_with(sweep_id)
-    mock_wandb_init.assert_called_once_with(project=project)
+    mock_weights_file_exists.assert_called_once()
 
     # Best run = run2
-    encoder = run2.config["encoder_name"]
-    batch_size = run2.config["batch_size"]
-    lr_initial = run2.config["lr_initial"]
+    encoder = run2.config.get("encoder_name")
+    batch_size = run2.config.get("batch_size")
+    lr_initial = run2.config.get("lr_initial")
     mock_wandb_artifact.assert_called_once_with(
         name="unet_model",
         type="model",
         description=f"Best model from sweep {sweep_id} based on validation loss",
         metadata={
             "run_id": run2.id,
-            "val_loss": run2.summary["val_loss"],
+            "val_loss": run2.summary.get("val_loss"),
             "encoder": encoder,
         },
     )
     artifact.add_file.assert_called_once_with(
         str(OUTPUT_PATH / f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt")
     )
-    mock_run.link_artifact.assert_called_once_with(
-        artifact=artifact, target_path=f"wandb-registry-{project}/models"
-    )
+    mock_wandb_log_artifact.assert_called_once_with(artifact)
+    artifact.save.assert_called_once_with(f"wandb-registry-{project}/models")
 
 
 @patch("wandb.finish")
@@ -182,13 +210,13 @@ def test_run_sweep(
     # Assertions
     mock_wandb_login.assert_called_once()
     mock_wandb_sweep.assert_called_once_with(
-        sweep_config_dict, project=config_object.project
+        sweep_config_dict, project=config_object.project, entity=config_object.entity
     )
     mock_logging.info("Sweep ID: %s", mock_wandb_sweep.return_value)
     mock_wandb_agent.assert_called_once_with(
         mock_wandb_sweep.return_value, function=run_wandb_exp
     )
     mock_model_upload.assert_called_once_with(
-        config_object.project, mock_wandb_sweep.return_value
+        config_object.entity, config_object.project, mock_wandb_sweep.return_value
     )
     mock_wandb_finish.assert_called_once()

@@ -81,8 +81,8 @@ class SegmentationDataset(Dataset):
         if self.transform:
             # Apply transformation to both image and mask.
             transformed_products = self.transform(image=image, mask=mask)
-            image = transformed_products["image"]
-            mask = transformed_products["mask"]
+            image = transformed_products.get("image")
+            mask = transformed_products.get("mask")
 
         # Cast image and mask as torch tensors.
         # Image output shape = (n_bands, n_y, n_x)

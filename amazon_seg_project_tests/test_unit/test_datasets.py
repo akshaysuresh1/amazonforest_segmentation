@@ -62,10 +62,10 @@ def test_afs_training_dataset_success(
     # Assertions for output
     assert len(output) == 1, f"Expected 1 output, found {len(output)} output(s)."
     assert output[0].value == mock_train_dataset
-    assert output[0].metadata["Training dataset length"].value == len(
+    assert output[0].metadata.get("Training dataset length").value == len(
         mock_train_dataset
     ), f"""Expected training dataset length = {len(mock_train_dataset)},
-        Actual dataset length = {output[0].metadata["Training dataset length"].value}"""
+        Actual dataset length = {output[0].metadata.get("Training dataset length").value}"""
 
 
 @patch("amazon_seg_project.assets.datasets.SegmentationDataset")
@@ -98,7 +98,7 @@ def test_afs_validation_dataset_success(mock_seg_dataset: MagicMock) -> None:
     # Assertions for output
     assert len(output) == 1, f"Expected 1 output, found {len(output)} output(s)."
     assert output[0].value == mock_val_dataset
-    assert output[0].metadata["Validation dataset length"].value == len(
+    assert output[0].metadata.get("Validation dataset length").value == len(
         mock_val_dataset
     ), f"""Expected validation dataset length = {len(mock_val_dataset)},
-        Actual dataset length = {output[0].metadata["Validation dataset length"].value}"""
+        Actual dataset length = {output[0].metadata.get("Validation dataset length").value}"""

@@ -68,14 +68,14 @@ def test_run_wandb_exp(
         afs_validation_dataset,
     ]
     mock_unet_config = BasicUnetConfig(
-        encoder_name=config_dict["encoder_name"],
-        model_seed=config_dict["seed"],
+        encoder_name=config_dict.get("encoder_name", ""),
+        model_seed=config_dict.get("seed", ""),
     )
     mock_train_config = TrainingDatasetConfig(
-        horizontal_flip_prob=config_dict["horizontal_flip_prob"],
-        vertical_flip_prob=config_dict["vertical_flip_prob"],
-        rotate90_prob=config_dict["rotate90_prob"],
-        augmentation_seed=config_dict["seed"],
+        horizontal_flip_prob=config_dict.get("horizontal_flip_prob", ""),
+        vertical_flip_prob=config_dict.get("vertical_flip_prob", ""),
+        rotate90_prob=config_dict.get("rotate90_prob", ""),
+        augmentation_seed=config_dict.get("seed", ""),
     )
     mock_run_config = RunConfig(
         {

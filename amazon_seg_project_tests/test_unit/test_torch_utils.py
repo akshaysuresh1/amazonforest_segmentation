@@ -158,7 +158,7 @@ def test_setup_adam_w_default_lr() -> None:
 
     # Assertions
     assert isinstance(optimizer, optim.AdamW)
-    assert optimizer.param_groups[0]["lr"] == 1.0e-4
+    assert optimizer.param_groups[0].get("lr") == 1.0e-4
 
 
 def test_setup_adam_w_custom_lr() -> None:
@@ -182,7 +182,7 @@ def test_setup_adam_w_custom_lr() -> None:
 
     # Assertions
     assert isinstance(optimizer, optim.AdamW)
-    assert optimizer.param_groups[0]["lr"] == custom_lr
+    assert optimizer.param_groups[0].get("lr") == custom_lr
 
 
 @patch("torch.save")

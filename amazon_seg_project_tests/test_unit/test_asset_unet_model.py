@@ -79,7 +79,8 @@ def test_model_parameter_settings() -> None:
     total_param_count = sum(p.numel() for p in model.parameters())
     encoder_param_count = sum(p.numel() for p in model.encoder.parameters())
     trainable_param_count = total_param_count - encoder_param_count
-    assert output[0].metadata["Total parameter count"].value == total_param_count
+    assert output[0].metadata.get("Total parameter count").value == total_param_count
     assert (
-        output[0].metadata["Trainable parameter count"].value == trainable_param_count
+        output[0].metadata.get("Trainable parameter count").value
+        == trainable_param_count
     )
