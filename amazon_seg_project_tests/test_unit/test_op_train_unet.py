@@ -19,6 +19,8 @@ from amazon_seg_project.resources import device
 @patch("amazon_seg_project.ops.wandb_utils.dice_loss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("torch.nn.DataParallel")
+@patch("torch.cuda.device_count", return_value=2)
 @patch("torch.cuda.manual_seed_all")
 @patch("torch.cuda.manual_seed")
 @patch("torch.manual_seed")
@@ -26,6 +28,8 @@ def test_single_epoch_training(
     mock_torch_manual_seed: MagicMock,
     mock_torch_cuda_seed: MagicMock,
     mock_torch_cuda_all_seed: MagicMock,
+    mock_torch_cuda_device_count: MagicMock,
+    mock_torch_DataParallel: MagicMock,
     mock_create_data_loaders: MagicMock,
     mock_adamw_optimizer: MagicMock,
     mock_dice_loss: MagicMock,
@@ -35,7 +39,8 @@ def test_single_epoch_training(
     mock_write_loss_data: MagicMock,
 ) -> None:
     """
-    Check for correct execution of a single epoch of U-net training
+    Check for correct execution of a single epoch of U-net training.
+    This test assumes a multi-GPU system.
     """
     # Set up mock W&B run config.
     mock_wandb_config = {
@@ -73,6 +78,7 @@ def test_single_epoch_training(
         in_channels=4,
         activation="sigmoid",
     )
+    mock_torch_DataParallel.return_value = model
 
     # Mock intermediate outputs.
     mock_train_loader = MagicMock(name="train_loader")
@@ -80,6 +86,7 @@ def test_single_epoch_training(
     mock_create_data_loaders.return_value = (mock_train_loader, mock_val_loader)
 
     mock_optimizer = MagicMock(name="optimizer")
+    mock_optimizer.param_groups = [{"lr": mock_wandb_config.get("lr_initial")}]
     mock_adamw_optimizer.return_value = mock_optimizer
 
     mock_train_epoch.return_value = 0.5
@@ -93,6 +100,8 @@ def test_single_epoch_training(
     mock_torch_cuda_seed.assert_called_once_with(seed)
     mock_torch_cuda_all_seed.assert_called_once_with(seed)
     assert next(model.parameters()).device.type == device.type
+    mock_torch_cuda_device_count.assert_called_once()
+    mock_torch_DataParallel.assert_called_once_with(model)
     mock_create_data_loaders.assert_called_once_with(
         training_dataset,
         validation_dataset,
@@ -112,6 +121,7 @@ def test_single_epoch_training(
             "epoch": 1,
             "train_loss": mock_train_epoch.return_value,
             "val_loss": mock_validate_epoch.return_value,
+            "lr": mock_optimizer.param_groups[0]["lr"],
         }
     )
     mock_save_model_weights.assert_called_once_with(model, OUTPUT_PATH / weights_file)
@@ -130,6 +140,7 @@ def test_single_epoch_training(
 @patch("amazon_seg_project.ops.wandb_utils.dice_loss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("torch.cuda.device_count", return_value=1)
 @patch("torch.cuda.manual_seed_all")
 @patch("torch.cuda.manual_seed")
 @patch("torch.manual_seed")
@@ -137,6 +148,7 @@ def test_early_stopping(
     mock_torch_manual_seed: MagicMock,
     mock_torch_cuda_seed: MagicMock,
     mock_torch_cuda_all_seed: MagicMock,
+    mock_torch_cuda_device_count: MagicMock,   
     mock_create_data_loaders: MagicMock,
     mock_adamw_optimizer: MagicMock,
     mock_dice_loss: MagicMock,
@@ -147,7 +159,7 @@ def test_early_stopping(
     mock_logging: MagicMock,
 ) -> None:
     """
-    Test early stopping of U-net model training
+    Test early stopping of U-net model training on a single GPU system
     """
     # Set up mock W&B run config.
     mock_wandb_config = {
@@ -205,6 +217,7 @@ def test_early_stopping(
     mock_torch_cuda_seed.assert_called_once_with(seed)
     mock_torch_cuda_all_seed.assert_called_once_with(seed)
     assert next(model.parameters()).device.type == device.type
+    mock_torch_cuda_device_count.assert_called_once()
     mock_create_data_loaders.assert_called_once_with(
         training_dataset,
         validation_dataset,
@@ -228,6 +241,7 @@ def test_early_stopping(
                     "epoch": i + 1,
                     "train_loss": mock_train_loss[i],
                     "val_loss": mock_val_loss[i],
+                     "lr": mock_optimizer.param_groups[0]["lr"],
                 }
             )
         )

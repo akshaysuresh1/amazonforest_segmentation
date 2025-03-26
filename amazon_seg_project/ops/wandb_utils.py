@@ -67,6 +67,9 @@ def train_unet(
 
     # Move model to device.
     model = model.to(device)
+    # Utilize multiple GPUs if available.
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
 
     # Create data loaders for training and validation.
     train_loader, val_loader = create_data_loaders(
@@ -111,6 +114,7 @@ def train_unet(
                 "epoch": epoch,
                 "train_loss": current_train_loss,
                 "val_loss": current_val_loss,
+                "lr": optimizer.param_groups[0]["lr"],
             }
         )
 
