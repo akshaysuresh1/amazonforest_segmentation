@@ -87,42 +87,6 @@ def test_make_sweep_config_custom_values() -> None:
     )
 
 
-@patch("amazon_seg_project.ops.wandb_utils.upload_best_model_to_wandb")
-@patch("wandb.agent")
-@patch("logging.info")
-@patch("wandb.sweep")
-@patch("wandb.login")
-def test_run_sweep(
-    mock_wandb_login: MagicMock,
-    mock_wandb_sweep: MagicMock,
-    mock_logging: MagicMock,
-    mock_wandb_agent: MagicMock,
-    mock_model_upload: MagicMock,
-) -> None:
-    """
-    Test successful execution of run_sweep() using mocked dependencies.
-    """
-    config_object = SweepConfig()
-    sweep_config_dict = make_sweep_config(config_object)
-    mock_wandb_sweep.return_value = "mock_id"
-
-    # Call the test function.
-    run_sweep(config_object)
-
-    # Assertions
-    mock_wandb_login.assert_called_once()
-    mock_wandb_sweep.assert_called_once_with(
-        sweep_config_dict, project=config_object.project
-    )
-    mock_logging.info("Sweep ID: %s", mock_wandb_sweep.return_value)
-    mock_wandb_agent.assert_called_once_with(
-        mock_wandb_sweep.return_value, function=run_wandb_exp
-    )
-    mock_model_upload.assert_called_once_with(
-        config_object.project, mock_wandb_sweep.return_value
-    )
-
-
 @patch("wandb.Artifact")
 @patch("wandb.Api")
 @patch("wandb.init")
@@ -189,3 +153,42 @@ def test_upload_best_model_to_wandb(
     mock_run.link_artifact.assert_called_once_with(
         artifact=artifact, target_path=f"wandb-registry-{project}/models"
     )
+
+
+@patch("wandb.finish")
+@patch("amazon_seg_project.ops.wandb_utils.upload_best_model_to_wandb")
+@patch("wandb.agent")
+@patch("logging.info")
+@patch("wandb.sweep")
+@patch("wandb.login")
+def test_run_sweep(
+    mock_wandb_login: MagicMock,
+    mock_wandb_sweep: MagicMock,
+    mock_logging: MagicMock,
+    mock_wandb_agent: MagicMock,
+    mock_model_upload: MagicMock,
+    mock_wandb_finish: MagicMock,
+) -> None:
+    """
+    Test successful execution of run_sweep() using mocked dependencies.
+    """
+    config_object = SweepConfig()
+    sweep_config_dict = make_sweep_config(config_object)
+    mock_wandb_sweep.return_value = "mock_id"
+
+    # Call the test function.
+    run_sweep(config_object)
+
+    # Assertions
+    mock_wandb_login.assert_called_once()
+    mock_wandb_sweep.assert_called_once_with(
+        sweep_config_dict, project=config_object.project
+    )
+    mock_logging.info("Sweep ID: %s", mock_wandb_sweep.return_value)
+    mock_wandb_agent.assert_called_once_with(
+        mock_wandb_sweep.return_value, function=run_wandb_exp
+    )
+    mock_model_upload.assert_called_once_with(
+        config_object.project, mock_wandb_sweep.return_value
+    )
+    mock_wandb_finish.assert_called_once()

@@ -138,12 +138,14 @@ def train_unet(
 
 
 @op
-def run_wandb_exp(wandb_config: Dict[str, Any]) -> None:
+def run_wandb_exp(wandb_config = None) -> None:
     """
     Run a W&B model training experiment.
     """
     with wandb.init(config=wandb_config) as run:
         # If called by wandb.agent, config will be set by Sweep Controller.
+        wandb_config = run.config
+
         unet_config = BasicUnetConfig(
             encoder_name=wandb_config["encoder_name"], model_seed=wandb_config["seed"]
         )
@@ -258,3 +260,4 @@ def run_sweep(config: SweepConfig) -> None:
     logging.info("Sweep ID: %s", sweep_id)
     wandb.agent(sweep_id, function=run_wandb_exp)
     upload_best_model_to_wandb(config.project, sweep_id)
+    wandb.finish()
