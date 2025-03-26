@@ -114,13 +114,13 @@ def test_make_sweep_config_custom_values() -> None:
 
 
 @patch("pathlib.Path.exists", return_value=True)
-@patch("wandb.log_artifact")
+@patch("wandb.init")
 @patch("wandb.Artifact")
 @patch("wandb.Api")
 def test_upload_best_model_to_wandb_success(
     mock_wandb_api: MagicMock,
     mock_wandb_artifact: MagicMock,
-    mock_wandb_log_artifact: MagicMock,
+    mock_wandb_init: MagicMock,
     mock_weights_file_exists: MagicMock,
 ) -> None:
     """
@@ -130,6 +130,8 @@ def test_upload_best_model_to_wandb_success(
     entity = "test-organization"
     project = "test_project"
     sweep_id = "test_id"
+    mock_run = MagicMock(name="mock-run")
+    mock_wandb_init.return_value.__enter__.return_value = mock_run
 
     # Set up mocks for wandb.Api() and wandb.Api().sweep().
     api = MagicMock(name="wandb-api")
@@ -161,6 +163,9 @@ def test_upload_best_model_to_wandb_success(
     mock_wandb_api.assert_called_once()
     api.sweep.assert_called_once_with(sweep_id)
     mock_weights_file_exists.assert_called_once()
+    mock_wandb_init.assert_called_once_with(
+        entity=entity, project=project, job_type="artifact-upload"
+    )
 
     # Best run = run2
     encoder = run2.config.get("encoder_name")
@@ -176,11 +181,15 @@ def test_upload_best_model_to_wandb_success(
             "encoder": encoder,
         },
     )
+
     artifact.add_file.assert_called_once_with(
         str(OUTPUT_PATH / f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt")
     )
-    mock_wandb_log_artifact.assert_called_once_with(artifact)
-    artifact.save.assert_called_once_with(f"wandb-registry-{project}/models")
+    mock_run.log_artifact.assert_called_once_with(artifact)
+    mock_run.link_artifact.assert_called_once_with(
+        artifact=mock_run.log_artifact.return_value,
+        target_path=f"wandb-registry-{project}/models",
+    )
 
 
 @patch("wandb.finish")

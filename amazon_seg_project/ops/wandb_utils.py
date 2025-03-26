@@ -248,27 +248,27 @@ def upload_best_model_to_wandb(entity: str, project: str, sweep_id: str) -> None
         if not weights_file.exists():
             raise ValueError(f"Weights file {weights_file} does not exist.")
 
-        # Create an artifact without starting a new run
-        artifact = wandb.Artifact(
-            name="unet_model",
-            type="model",
-            description=f"Best model from sweep {sweep_id} based on validation loss",
-            metadata={
-                "run_id": best_run.id,
-                "val_loss": best_run.summary.get("val_loss"),
-                "encoder": encoder,
-            },
-        )
-
-        # Add file to artifact
-        artifact.add_file(str(weights_file))
-
-        # Save the artifact directly to W&B without a run context
-        wandb.log_artifact(artifact)
-
-        # Publish artifact to registry.
-        target_path = f"wandb-registry-{project}/models"
-        artifact.save(target_path)
+        with wandb.init(
+            entity=entity, project=project, job_type="artifact-upload"
+        ) as run:
+            # Create a W&B artifact for the weights file from the best run.
+            artifact = wandb.Artifact(
+                name="unet_model",
+                type="model",
+                description=f"Best model from sweep {sweep_id} based on validation loss",
+                metadata={
+                    "run_id": best_run.id,
+                    "val_loss": best_run.summary.get("val_loss"),
+                    "encoder": encoder,
+                },
+            )
+            artifact.add_file(str(weights_file))
+            # Log artifact.
+            logged_artifact = run.log_artifact(artifact)
+            # Link artifact to W&B registry.
+            run.link_artifact(
+                artifact=logged_artifact, target_path=f"wandb-registry-{project}/models"
+            )
 
     except Exception as e:
         logging.info("An error occurred: %s", e)
