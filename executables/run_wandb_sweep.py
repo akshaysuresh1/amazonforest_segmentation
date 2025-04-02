@@ -15,6 +15,7 @@ sweep_config = SweepConfig(
     metric_name="val_loss",
     metric_goal="minimize",
     seed={"values": [43]},
+    threshold={"values":[0.5]},
     encoder_name={"values": ["resnet50"]},
     batch_size={"values": [4]},
     lr_initial={"values": [1.0e-4]},
