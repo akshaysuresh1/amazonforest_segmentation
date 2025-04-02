@@ -12,6 +12,40 @@ from amazon_seg_project.ops.wandb_utils import train_unet
 from amazon_seg_project.resources import device
 
 
+@patch("logging.info")
+def test_skip_training_for_epochs_less_than_1(mock_logging: MagicMock) -> None:
+    """
+    Verify that model training is skipped if max number of training epochs < 1.
+    """
+    # Set up mock W&B run config.
+    mock_wandb_config = {
+        "seed": 56,
+        "threshold": 0.45,
+        "encoder_name": "resnet50",
+        "batch_size": 4,
+        "lr_initial": 0.001,
+        "max_epochs": 0,
+    }
+
+    # Set up mock W&B run.
+    mock_run = MagicMock(name="mock-wandb-run")
+    mock_run.config = mock_wandb_config
+
+    # Create mocks for model, training, and validation datasets.
+    mock_training_dataset = MagicMock(name="training-dataset")
+    mock_validation_dataset = MagicMock(name="validation-dataset")
+    mock_model = MagicMock(name="model")
+
+    # Call the test function.
+    train_unet(mock_run, mock_training_dataset, mock_validation_dataset, mock_model)
+
+    # Assertions
+    mock_logging.assert_called_once_with(
+        "No. of training epochs < 1. Model training skipped"
+    )
+
+
+@patch("wandb.Artifact")
 @patch("amazon_seg_project.ops.wandb_utils.write_loss_data_to_csv")
 @patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
 @patch("amazon_seg_project.ops.wandb_utils.validate_epoch")
@@ -37,6 +71,7 @@ def test_single_epoch_training(
     mock_validate_epoch: MagicMock,
     mock_save_model_weights: MagicMock,
     mock_write_loss_data: MagicMock,
+    mock_wandb_artifact: MagicMock,
 ) -> None:
     """
     Check for correct execution of a single epoch of U-net training.
@@ -53,6 +88,7 @@ def test_single_epoch_training(
     }
     mock_wandb_run = MagicMock(name="mock_wandb_run")
     mock_wandb_run.config = mock_wandb_config
+    mock_wandb_run.id = "abcde"
 
     # Define datasets and model.
     seed = mock_wandb_config.get("seed")
@@ -92,6 +128,10 @@ def test_single_epoch_training(
 
     mock_train_epoch.return_value = 0.5
     mock_validate_epoch.return_value = {"val_loss": 0.4, "Accuracy": 0.6}
+
+    # Mock artifact.
+    artifact = MagicMock(name="artifact")
+    mock_wandb_artifact.return_value = artifact
 
     # Call the test function.
     train_unet(mock_wandb_run, training_dataset, validation_dataset, model)
@@ -135,8 +175,22 @@ def test_single_epoch_training(
         [mock_validate_epoch.return_value["val_loss"]],
         OUTPUT_PATH / "train" / losscurve_csv,
     )
+    mock_wandb_artifact.assert_called_once_with(
+        name=f"unet_with_{encoder}",
+        type="model",
+        metadata={
+            "run_id": mock_wandb_run.id,
+            "encoder": encoder,
+            "lr_initial": lr_initial,
+            "batch_size": batch_size,
+            **mock_validate_epoch.return_value,
+        },
+    )
+    artifact.add_file.assert_called_once_with(str(OUTPUT_PATH / weights_file))
+    mock_wandb_run.log_artifact.assert_called_once_with(artifact)
 
 
+@patch("wandb.Artifact")
 @patch("logging.info")
 @patch("amazon_seg_project.ops.wandb_utils.write_loss_data_to_csv")
 @patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
@@ -162,6 +216,7 @@ def test_early_stopping(
     mock_save_model_weights: MagicMock,
     mock_write_loss_data: MagicMock,
     mock_logging: MagicMock,
+    mock_wandb_artifact: MagicMock,
 ) -> None:
     """
     Test early stopping of U-net model training on a single GPU system
@@ -214,6 +269,10 @@ def test_early_stopping(
     mock_create_data_loaders.return_value = (mock_train_loader, mock_val_loader)
     mock_adamw_optimizer.return_value = mock_optimizer
     mock_train_epoch.side_effect = mock_train_loss
+
+    # Mock artifact.
+    artifact = MagicMock(name="artifact")
+    mock_wandb_artifact.return_value = artifact
 
     # Set up iterators over mock_val_loss and mock_metric_values.
     val_loss_iter = iter(mock_val_loss)
@@ -287,3 +346,17 @@ def test_early_stopping(
         mock_val_loss[:-1],
         OUTPUT_PATH / "train" / losscurve_csv,
     )
+    mock_wandb_artifact.assert_called_once_with(
+        name=f"unet_with_{encoder}",
+        type="model",
+        metadata={
+            "run_id": mock_wandb_run.id,
+            "encoder": encoder,
+            "lr_initial": lr_initial,
+            "batch_size": batch_size,
+            "val_loss": mock_val_loss[1],
+            "Accuracy": mock_accuracy_values[1],
+        },
+    )
+    artifact.add_file.assert_called_once_with(str(OUTPUT_PATH / weights_file))
+    mock_wandb_run.log_artifact.assert_called_once_with(artifact)

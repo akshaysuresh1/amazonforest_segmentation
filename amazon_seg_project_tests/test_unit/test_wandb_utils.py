@@ -232,7 +232,7 @@ def test_run_sweep(
     mock_wandb_agent.assert_called_once_with(
         mock_wandb_sweep.return_value, function=run_wandb_exp
     )
-    mock_model_upload.assert_called_once_with(
-        config_object.entity, config_object.project, mock_wandb_sweep.return_value
-    )
+    # mock_model_upload.assert_called_once_with(
+    #    config_object.entity, config_object.project, mock_wandb_sweep.return_value
+    # )
     mock_wandb_finish.assert_called_once()

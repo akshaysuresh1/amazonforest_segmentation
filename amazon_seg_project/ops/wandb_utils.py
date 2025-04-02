@@ -67,6 +67,11 @@ def train_unet(
     batch_size = config.get("batch_size")
     lr_initial = config.get("lr_initial")
     threshold = config.get("threshold")
+    max_epochs = config.get("max_epochs")
+
+    if max_epochs < 1:
+        logging.info("No. of training epochs < 1. Model training skipped")
+        return  # Exit the function
 
     # Set PyTorch seed.
     torch.manual_seed(seed)
@@ -131,6 +136,7 @@ def train_unet(
         # Check if validation loss improved.
         if val_loss[-1] < lowest_val_loss:
             lowest_val_loss = val_loss[-1]
+            current_best_stats = val_results
             epochs_since_improvement = 0  # Reset counter
             save_model_weights(model, OUTPUT_PATH / weights_file)
         else:
@@ -149,6 +155,21 @@ def train_unet(
             write_loss_data_to_csv(
                 train_loss, val_loss, OUTPUT_PATH / "train" / loss_curve_csv
             )
+
+    # Create a W&B artifact for the weights file.
+    artifact = wandb.Artifact(
+        name=f"unet_with_{encoder}",
+        type="model",
+        metadata={
+            "run_id": wb_run.id,
+            "encoder": encoder,
+            "lr_initial": lr_initial,
+            "batch_size": batch_size,
+            **current_best_stats,
+        },
+    )
+    artifact.add_file(str(OUTPUT_PATH / weights_file))
+    wb_run.log_artifact(artifact)
 
 
 @op
@@ -299,5 +320,5 @@ def run_sweep(config: SweepConfig) -> None:
     sweep_id = wandb.sweep(sweep_config, project=config.project, entity=config.entity)
     logging.info("Sweep ID: %s", sweep_id)
     wandb.agent(sweep_id, function=run_wandb_exp)
-    upload_best_model_to_wandb(config.entity, config.project, sweep_id)
+    #upload_best_model_to_wandb(config.entity, config.project, sweep_id)
     wandb.finish()
