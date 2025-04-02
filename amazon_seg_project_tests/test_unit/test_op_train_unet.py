@@ -2,7 +2,7 @@
 Unit test for op "train_unet"
 """
 
-from typing import List, Any
+from typing import List, Dict, Any
 from unittest.mock import patch, MagicMock, call
 from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import SegmentationDataset
@@ -16,7 +16,7 @@ from amazon_seg_project.resources import device
 @patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
 @patch("amazon_seg_project.ops.wandb_utils.validate_epoch")
 @patch("amazon_seg_project.ops.wandb_utils.train_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.dice_loss")
+@patch("amazon_seg_project.ops.wandb_utils.smp.losses.DiceLoss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
 @patch("torch.nn.DataParallel")
@@ -45,6 +45,7 @@ def test_single_epoch_training(
     # Set up mock W&B run config.
     mock_wandb_config = {
         "seed": 42,
+        "threshold": 0.41,
         "encoder_name": "resnet50",
         "batch_size": 4,
         "lr_initial": 0.001,
@@ -90,7 +91,7 @@ def test_single_epoch_training(
     mock_adamw_optimizer.return_value = mock_optimizer
 
     mock_train_epoch.return_value = 0.5
-    mock_validate_epoch.return_value = 0.4
+    mock_validate_epoch.return_value = {"val_loss": 0.4, "Accuracy": 0.6}
 
     # Call the test function.
     train_unet(mock_wandb_run, training_dataset, validation_dataset, model)
@@ -111,23 +112,27 @@ def test_single_epoch_training(
     mock_adamw_optimizer.assert_called_once_with(model, lr_initial=lr_initial)
     mock_wandb_run.watch.assert_called_once_with(model)
     mock_train_epoch.assert_called_once_with(
-        model, mock_train_loader, mock_optimizer, mock_dice_loss, device
+        model, mock_train_loader, mock_optimizer, mock_dice_loss(), device
     )
     mock_validate_epoch.assert_called_once_with(
-        model, mock_val_loader, mock_dice_loss, device
+        model,
+        mock_val_loader,
+        mock_dice_loss(),
+        device,
+        mock_wandb_config.get("threshold"),
     )
     mock_wandb_run.log.assert_called_once_with(
         {
             "epoch": 1,
-            "train_loss": mock_train_epoch.return_value,
-            "val_loss": mock_validate_epoch.return_value,
             "lr": mock_optimizer.param_groups[0]["lr"],
+            "train_loss": mock_train_epoch.return_value,
+            **mock_validate_epoch.return_value,
         }
     )
     mock_save_model_weights.assert_called_once_with(model, OUTPUT_PATH / weights_file)
     mock_write_loss_data.assert_called_once_with(
         [mock_train_epoch.return_value],
-        [mock_validate_epoch.return_value],
+        [mock_validate_epoch.return_value["val_loss"]],
         OUTPUT_PATH / "train" / losscurve_csv,
     )
 
@@ -137,7 +142,7 @@ def test_single_epoch_training(
 @patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
 @patch("amazon_seg_project.ops.wandb_utils.validate_epoch")
 @patch("amazon_seg_project.ops.wandb_utils.train_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.dice_loss")
+@patch("amazon_seg_project.ops.wandb_utils.smp.losses.DiceLoss")
 @patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
 @patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
 @patch("torch.cuda.device_count", return_value=1)
@@ -148,7 +153,7 @@ def test_early_stopping(
     mock_torch_manual_seed: MagicMock,
     mock_torch_cuda_seed: MagicMock,
     mock_torch_cuda_all_seed: MagicMock,
-    mock_torch_cuda_device_count: MagicMock,   
+    mock_torch_cuda_device_count: MagicMock,
     mock_create_data_loaders: MagicMock,
     mock_adamw_optimizer: MagicMock,
     mock_dice_loss: MagicMock,
@@ -164,6 +169,7 @@ def test_early_stopping(
     # Set up mock W&B run config.
     mock_wandb_config = {
         "seed": 47,
+        "threshold": 0.39,
         "encoder_name": "resnet50",
         "batch_size": 4,
         "lr_initial": 0.001,
@@ -199,6 +205,7 @@ def test_early_stopping(
     )
     mock_train_loss = [0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.25, 0.25]
     mock_val_loss = [0.49, 0.48, 0.49, 0.49, 0.49, 0.49, 0.49, 0.48]
+    mock_accuracy_values = [0.65, 0.67, 0.68, 0.70, 0.71, 0.72, 0.73, 0.74]
 
     # Mock intermediate outputs.
     mock_train_loader = MagicMock(name="train_loader")
@@ -207,7 +214,28 @@ def test_early_stopping(
     mock_create_data_loaders.return_value = (mock_train_loader, mock_val_loader)
     mock_adamw_optimizer.return_value = mock_optimizer
     mock_train_epoch.side_effect = mock_train_loss
-    mock_validate_epoch.side_effect = mock_val_loss
+
+    # Set up iterators over mock_val_loss and mock_metric_values.
+    val_loss_iter = iter(mock_val_loss)
+    accuracy_iter = iter(mock_accuracy_values)
+
+    # Define a side_effect function for mocking
+    def side_effect(*args, **kwargs) -> Dict[str, float | None]:
+        """
+        Custom side_effect function for mocking.
+
+        It iterates over "mock_val_loss" and "metric_value_iter".
+        """
+        try:
+            return {
+                "val_loss": next(val_loss_iter),
+                "Accuracy": next(accuracy_iter),
+            }
+        except StopIteration:
+            # Handle case when either mock_val_loss or mock_accuracy_values is exhausted.
+            return {"val_loss": None, "Accuracy": None}
+
+    mock_validate_epoch.side_effect = side_effect
 
     # Call the test function.
     train_unet(mock_wandb_run, training_dataset, validation_dataset, model)
@@ -227,10 +255,14 @@ def test_early_stopping(
     mock_adamw_optimizer.assert_called_once_with(model, lr_initial=lr_initial)
     mock_wandb_run.watch.assert_called_once_with(model)
     mock_train_epoch.assert_called_with(
-        model, mock_train_loader, mock_optimizer, mock_dice_loss, device
+        model, mock_train_loader, mock_optimizer, mock_dice_loss(), device
     )
     mock_validate_epoch.assert_called_with(
-        model, mock_val_loader, mock_dice_loss, device
+        model,
+        mock_val_loader,
+        mock_dice_loss(),
+        device,
+        mock_wandb_config.get("threshold"),
     )
     # Logging assertions for epochs 1 – 7
     expected_calls: List[Any] = []
@@ -239,9 +271,10 @@ def test_early_stopping(
             call(
                 {
                     "epoch": i + 1,
+                    "lr": mock_optimizer.param_groups[0]["lr"],
                     "train_loss": mock_train_loss[i],
                     "val_loss": mock_val_loss[i],
-                     "lr": mock_optimizer.param_groups[0]["lr"],
+                    "Accuracy": mock_accuracy_values[i],
                 }
             )
         )

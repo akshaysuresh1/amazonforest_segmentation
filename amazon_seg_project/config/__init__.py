@@ -41,6 +41,8 @@ class SweepConfig(Config):
     method: str = Field(default="grid")
     metric_name: str = Field(default="val_loss")
     metric_goal: str = Field(default="minimize")
+    # Mask binarization threshold
+    threshold: Dict[str, Any] = Field(default={"values": [0.5]})
     # Model training arameters
     seed: Dict[str, Any] = Field(default={"values": [43]})
     encoder_name: Dict[str, Any] = Field(default={"values": ["resnet50"]})

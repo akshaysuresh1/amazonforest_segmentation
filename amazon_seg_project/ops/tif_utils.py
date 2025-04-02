@@ -7,11 +7,12 @@ from typing import List
 import numpy as np
 import rioxarray as rxr
 import xarray as xr
-from dagster import op, Out, Any
+from dagster import op, Out
+from dagster import Any as dg_Any
 from dagster_aws.s3 import S3Resource
 
 
-@op(out=Out(Any))
+@op(out=Out(dg_Any))
 def simulate_mock_multispec_data(
     n_bands: int, n_y: int, n_x: int, bit_depth: int = 16
 ) -> xr.DataArray:
@@ -71,7 +72,7 @@ def simulate_mock_multispec_data(
     return data_array
 
 
-@op(out=Out(Any))
+@op(out=Out(dg_Any))
 def load_tif_from_s3(
     s3_resource: S3Resource, s3_bucket: str, object_key: str
 ) -> xr.DataArray | xr.Dataset | List[xr.Dataset]:

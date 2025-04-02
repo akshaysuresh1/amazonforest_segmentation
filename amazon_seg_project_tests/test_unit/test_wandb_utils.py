@@ -28,6 +28,9 @@ def test_make_sweep_config_default_values() -> None:
     assert output_sweep_config.get("metric").get("goal") == test_config.metric_goal
     assert output_sweep_config.get("parameters").get("seed") == test_config.seed
     assert (
+        output_sweep_config.get("parameters").get("threshold") == test_config.threshold
+    )
+    assert (
         output_sweep_config.get("parameters").get("encoder_name")
         == test_config.encoder_name
     )
@@ -66,6 +69,7 @@ def test_make_sweep_config_custom_values() -> None:
         metric_name="val_dice_loss",
         metric_goal="minimize",
         seed={"values": [59]},
+        threshold={"values": [0.4, 0.7]},
         encoder_name={"values": ["resnet50", "se_resnet50", "efficientnet-b6"]},
         batch_size={"values": [4, 8, 16, 32]},
         lr_initial={"distribution": "uniform", "min": 1.0e-5, "max": 1.0e-2},
@@ -83,6 +87,9 @@ def test_make_sweep_config_custom_values() -> None:
     assert output_sweep_config.get("metric").get("name") == test_config.metric_name
     assert output_sweep_config.get("metric").get("goal") == test_config.metric_goal
     assert output_sweep_config.get("parameters").get("seed") == test_config.seed
+    assert (
+        output_sweep_config.get("parameters").get("threshold") == test_config.threshold
+    )
     assert (
         output_sweep_config.get("parameters").get("encoder_name")
         == test_config.encoder_name

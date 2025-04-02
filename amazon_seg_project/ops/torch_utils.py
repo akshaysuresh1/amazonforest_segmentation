@@ -5,13 +5,15 @@ Utility functions for model training, validation, and inference
 import os
 import random
 import logging
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union, Any
 import numpy as np
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
-from dagster import op, In, Out, Any
-import segmentation_models_pytorch as smp
+from dagster import op, In, Out
+from dagster import Any as dg_Any
+from segmentation_models_pytorch import Unet
+from .metrics import smp_metrics
 from .write_files import create_directories
 
 
@@ -33,12 +35,12 @@ def worker_seed_fn(worker_id: int) -> None:
 
 @op(
     ins={
-        "training_dset": In(Any),
-        "validation_dset": In(Any),
+        "training_dset": In(dg_Any),
+        "validation_dset": In(dg_Any),
         "batch_size": In(int),
         "num_workers": In(int),
     },
-    out=Out(Any),
+    out=Out(dg_Any),
 )
 def create_data_loaders(
     training_dset: Any,
@@ -62,7 +64,7 @@ def create_data_loaders(
     max_workers = os.cpu_count() or 1
     if num_workers <= 0 or num_workers > max_workers:
         num_workers = max_workers
-    
+
     # Set manual seed for generator.
     generator = torch.Generator()
     generator.manual_seed(seed)
@@ -90,8 +92,8 @@ def create_data_loaders(
     return train_loader, val_loader
 
 
-@op(ins={"model": In(Any), "lr_initial": In(float)}, out=Out(Any))
-def setup_adam_w(model: smp.Unet, lr_initial: float = 1.0e-4) -> optim.AdamW:
+@op(ins={"model": In(dg_Any), "lr_initial": In(float)}, out=Out(dg_Any))
+def setup_adam_w(model: Unet, lr_initial: float = 1.0e-4) -> optim.AdamW:
     """
     Sets up the AdamW optimizer for training the given U-Net model.
 
@@ -108,16 +110,16 @@ def setup_adam_w(model: smp.Unet, lr_initial: float = 1.0e-4) -> optim.AdamW:
 
 @op(
     ins={
-        "model": In(Any),
-        "train_loader": In(Any),
-        "optimizer": In(Any),
-        "criterion": In(Any),
-        "train_device": In(Any),
+        "model": In(dg_Any),
+        "train_loader": In(dg_Any),
+        "optimizer": In(dg_Any),
+        "criterion": In(dg_Any),
+        "train_device": In(dg_Any),
     },
     out=Out(float),
 )
 def train_epoch(
-    model: smp.Unet,
+    model: Unet,
     train_loader: DataLoader,
     optimizer: Any,
     criterion: Any,
@@ -165,16 +167,21 @@ def train_epoch(
 
 @op(
     ins={
-        "model": In(Any),
-        "val_loader": In(Any),
-        "criterion": In(Any),
-        "val_device": In(Any),
+        "model": In(dg_Any),
+        "val_loader": In(dg_Any),
+        "criterion": In(dg_Any),
+        "val_device": In(dg_Any),
+        "threshold": In(float),
     },
-    out=Out(float),
+    out=Out(dg_Any),
 )
 def validate_epoch(
-    model: smp.Unet, val_loader: DataLoader, criterion: Any, val_device: torch.device
-) -> float:
+    model: Unet,
+    val_loader: DataLoader,
+    criterion: Any,
+    val_device: torch.device,
+    threshold: float,
+) -> Dict[str, float]:
     """
     Perform one epoch of model validation
 
@@ -183,34 +190,65 @@ def validate_epoch(
         val_loader: The validation data loader
         criterion: The loss function
         val_device: The device to validate on (CPU or CUDA)
+        threshold: Binarization threshold in the range [0, 1]
 
-    Returns: Batch-averaged validation loss for the epoch
+    Returns: Dictionary comprising of validation metric values and batch-averaged loss
     """
     model.to(val_device)
     model.eval()
     summed_val_loss = 0.0
     n_val_samples = 0  # No. of validation samples
+    # Store results of metric evaluations on validation data.
+    accuracy = 0.0
+    precision = 0.0
+    recall = 0.0
+    f1_score = 0.0
+    iou_score = 0.0
     with torch.no_grad():
         for batch in val_loader:
             # Images shape = (batch size, color channels, height, width)
             # Masks shape = (batch size, 1, height, weight)
             images, true_masks = batch
+            curr_batch_size = true_masks.shape[0]
             # Move data to device.
             images, true_masks = images.to(val_device), true_masks.to(val_device)
             # Obtain model predictions and compute loss.
             pred_masks = model(images)
             loss = criterion(pred_masks, true_masks)
-            summed_val_loss += loss.item() * true_masks.shape[0]
-            n_val_samples += true_masks.shape[0]
-    # Calculate batch-averaged validation loss.
+            summed_val_loss += loss.item() * curr_batch_size
+            n_val_samples += curr_batch_size
+            # Compute metrics on batched validation data.
+            metric_values = smp_metrics(
+                pred_masks, true_masks.int(), threshold=threshold
+            )
+            accuracy += metric_values.get("Accuracy") * curr_batch_size
+            precision += metric_values.get("Precision") * curr_batch_size
+            recall += metric_values.get("Recall") * curr_batch_size
+            f1_score += metric_values.get("F1 score") * curr_batch_size
+            iou_score += metric_values.get("IoU") * curr_batch_size
+
+    # Calculate batch-averaged values of validation loss and metrics.
     if n_val_samples == 0:
         raise ValueError("No validation data found.")
     avg_val_loss = summed_val_loss / n_val_samples
-    return avg_val_loss
+    accuracy /= n_val_samples
+    precision /= n_val_samples
+    recall /= n_val_samples
+    f1_score /= n_val_samples
+    iou_score /= n_val_samples
+
+    return {
+        "val_loss": avg_val_loss,
+        "Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 score": f1_score,
+        "IoU": iou_score,
+    }
 
 
-@op(ins={"model": In(Any), "filepath": In(Any)})
-def save_model_weights(model: smp.Unet, filepath: Union[str, os.PathLike]) -> None:
+@op(ins={"model": In(dg_Any), "filepath": In(dg_Any)})
+def save_model_weights(model: Unet, filepath: Union[str, os.PathLike]) -> None:
     """
     Saves U-Net model weights to the specified filepath.
 

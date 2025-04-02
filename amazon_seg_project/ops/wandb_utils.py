@@ -10,8 +10,8 @@ import wandb
 from wandb.sdk.wandb_run import Run
 from dagster import op, In, materialize_to_memory, RunConfig
 from dagster import Any as dg_Any
+import segmentation_models_pytorch as smp
 from segmentation_models_pytorch import Unet
-from .metrics import dice_loss
 from .torch_utils import (
     create_data_loaders,
     setup_adam_w,
@@ -53,12 +53,20 @@ def train_unet(
 ) -> None:
     """
     Train a U-net using batch gradient descent and log run results to W&B.
+
+    Args:
+        wb_run: Weights & Biases SDK Run object created with wandb.init()
+        training_dset: Training dataset
+        validation_dset: Validation dataset
+        model: U-net model
+        val_metrics: List of metrics to be evaluated on validation data
     """
     config = wb_run.config
     seed = config.get("seed")
     encoder = config.get("encoder_name")
     batch_size = config.get("batch_size")
     lr_initial = config.get("lr_initial")
+    threshold = config.get("threshold")
 
     # Set PyTorch seed.
     torch.manual_seed(seed)
@@ -81,7 +89,9 @@ def train_unet(
 
     # Set up optimizer and loss criterion.
     optimizer = setup_adam_w(model, lr_initial=lr_initial)
-    criterion = dice_loss
+    criterion = smp.losses.DiceLoss(
+        mode="binary", from_logits=False, smooth=1.0e-6, eps=0.0
+    )
 
     # Track minimum validation loss observed across epochs.
     lowest_val_loss = float("inf")
@@ -105,16 +115,16 @@ def train_unet(
         train_loss.append(current_train_loss)
 
         # Validation step
-        current_val_loss = validate_epoch(model, val_loader, criterion, device)
-        val_loss.append(current_val_loss)
+        val_results = validate_epoch(model, val_loader, criterion, device, threshold)
+        val_loss.append(val_results.get("val_loss"))
 
         # W&B logging
         wb_run.log(
             {
                 "epoch": epoch,
-                "train_loss": current_train_loss,
-                "val_loss": current_val_loss,
                 "lr": optimizer.param_groups[0]["lr"],
+                "train_loss": current_train_loss,
+                **val_results,
             }
         )
 
@@ -199,6 +209,7 @@ def make_sweep_config(config: SweepConfig) -> Dict[str, Any]:
         },  # Metric to optimize
         "parameters": {
             "seed": config.seed,  # Seed for reproducibility
+            "threshold": config.threshold,  # Mask binarization threshold
             "encoder_name": config.encoder_name,  # Encoder for U-net model
             "batch_size": config.batch_size,  # Batch size
             "lr_initial": config.lr_initial,  # Initial learning rate

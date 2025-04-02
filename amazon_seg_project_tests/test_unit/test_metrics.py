@@ -1,10 +1,112 @@
 """
-Unit tests for modules defined in amazon_seg_project.ops.loss_functions
+Unit tests for modules defined in amazon_seg_project.ops.metrics
 """
 
+import math
+import re
 import pytest
 import torch
-from amazon_seg_project.ops.metrics import iou_metric, dice_coefficient, dice_loss
+from amazon_seg_project.ops.metrics import (
+    smp_metrics,
+    iou_metric,
+    dice_coefficient,
+    dice_loss,
+)
+
+
+def test_smp_metrics_invalid_threshold() -> None:
+    """
+    Check response of smp_metrics() to a threshold value outside of [0, 1].
+    """
+    threshold = 1.3
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Threshold must be in the range [0, 1]. Input threshold = {threshold}"
+        ),
+    ):
+        batch_size = 8
+        img_height = 64
+        img_width = 64
+
+        predicted = torch.randn((batch_size, 1, img_height, img_width))
+        target = torch.randn((batch_size, 1, img_height, img_width))
+        smp_metrics(predicted, target, threshold=threshold)
+
+
+def test_smp_metrics_unequal_tensor_shapes() -> None:
+    """
+    Check response of smp_metrics() to inputs of unequal shapes.
+    """
+    with pytest.raises(
+        ValueError, match="Predicted and target masks have different shapes."
+    ):
+        batch_size = 8
+        img_height = 64
+        img_width = 64
+
+        predicted = torch.randn((batch_size, 1, img_height, img_width))
+        target = torch.randn((batch_size, 2, img_height, img_width))
+        smp_metrics(predicted, target)
+
+
+def test_smp_metrics_success() -> None:
+    """
+    Test for response of smp_metrics() to valid inputs
+    """
+    threshold = 0.4
+    # Manually set predicted and target tensors
+    predicted = (
+        torch.tensor(
+            [
+                [0.5, 0.1, 0.4, 0.2],
+                [0.7, 0.8, 0.9, 0.3],
+                [0.0, 0.1, 0.6, 0.6],
+                [0.5, 0.1, 0.2, 0.9],
+            ],
+            dtype=torch.float32,
+        )
+        .unsqueeze(0)
+        .unsqueeze(0)
+    )  # Shape: (1, 1, 4, 4)
+
+    target = (
+        torch.tensor(
+            [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 1, 1], [1, 0, 1, 1]],
+            dtype=torch.int,
+        )
+        .unsqueeze(0)
+        .unsqueeze(0)
+    )  # Shape: (1, 1, 4, 4)
+
+    # Metric calculations
+    binarized_predicted = torch.where(predicted >= threshold, 1.0, 0.0)
+    tp = ((binarized_predicted == 1) & (target == 1)).sum().item()  # True positives
+    fp = ((binarized_predicted == 1) & (target == 0)).sum().item()  # False positives
+    fn = ((binarized_predicted == 0) & (target == 1)).sum().item()  # False negatives
+    tn = ((binarized_predicted == 0) & (target == 0)).sum().item()  # True negatives
+    accuracy = (tp + tn) / (tp + fp + fn + tn)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    f1_score = 2 * precision * recall / (precision + recall)
+    iou_score = tp / (tp + fp + fn)
+
+    # Call the test function.
+    result = smp_metrics(predicted, target, threshold=0.4)
+
+    # Assertions
+    rtol = 1.0e-6 # Relative tolerance for floating-point comparison
+    atol = 1.0e-8 # Absolute tolerance for floating-point comparison
+    assert "Accuracy" in result
+    assert math.isclose(result.get("Accuracy"), accuracy, rel_tol=rtol, abs_tol=atol)
+    assert "Precision" in result
+    assert math.isclose(result.get("Precision"), precision, rel_tol=rtol, abs_tol=atol)
+    assert "Recall" in result
+    assert math.isclose(result.get("Recall"), recall, rel_tol=rtol, abs_tol=atol)
+    assert "F1 score" in result
+    assert math.isclose(result.get("F1 score"), f1_score, rel_tol=rtol, abs_tol=atol)
+    assert "IoU" in result
+    assert math.isclose(result.get("IoU"), iou_score, rel_tol=rtol, abs_tol=atol)
 
 
 def test_iou_unequal_arrayshapes() -> None:

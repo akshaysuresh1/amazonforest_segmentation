@@ -7,10 +7,11 @@ import logging
 from typing import List, Union
 import numpy as np
 import pandas as pd
-from dagster import op, In, Any
+from dagster import op, In
+from dagster import Any as dg_Any
 
 
-@op(ins={"filepath": In(Any)})
+@op(ins={"filepath": In(dg_Any)})
 def create_directories(filepath: Union[str, os.PathLike]) -> None:
     """
     Recursively create directories for the given filepath.
@@ -28,7 +29,14 @@ def create_directories(filepath: Union[str, os.PathLike]) -> None:
         raise
 
 
-@op(ins={"means": In(Any), "sigma": In(Any), "bands": In(List[str]), "outcsv": In(Any)})
+@op(
+    ins={
+        "means": In(dg_Any),
+        "sigma": In(dg_Any),
+        "bands": In(List[str]),
+        "outcsv": In(dg_Any),
+    }
+)
 def write_stats_to_csv(
     means: np.ndarray,
     sigma: np.ndarray,
@@ -65,7 +73,7 @@ def write_stats_to_csv(
     ins={
         "train_loss": In(List[float]),
         "val_loss": In(List[float]),
-        "outcsv": In(Any),
+        "outcsv": In(dg_Any),
     }
 )
 def write_loss_data_to_csv(
