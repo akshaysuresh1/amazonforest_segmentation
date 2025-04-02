@@ -8,7 +8,7 @@ from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import SegmentationDataset
 from amazon_seg_project.data_paths import OUTPUT_PATH
 from amazon_seg_project.ops.aug_utils import get_aug_pipeline
-from amazon_seg_project.ops.wandb_utils import train_unet
+from amazon_seg_project.ops.train_unet import train_unet
 from amazon_seg_project.resources import device
 
 
@@ -41,18 +41,18 @@ def test_skip_training_for_epochs_less_than_1(mock_logging: MagicMock) -> None:
 
     # Assertions
     mock_logging.assert_called_once_with(
-        "No. of training epochs < 1. Model training skipped"
+        "No. of training epochs < 1. Model training skipped."
     )
 
 
-@patch("wandb.Artifact")
-@patch("amazon_seg_project.ops.wandb_utils.write_loss_data_to_csv")
-@patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
-@patch("amazon_seg_project.ops.wandb_utils.validate_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.train_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.smp.losses.DiceLoss")
-@patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
-@patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("amazon_seg_project.ops.train_unet.create_and_log_wandb_artifact")
+@patch("amazon_seg_project.ops.train_unet.write_loss_data_to_csv")
+@patch("amazon_seg_project.ops.train_unet.save_model_weights")
+@patch("amazon_seg_project.ops.train_unet.validate_epoch")
+@patch("amazon_seg_project.ops.train_unet.train_epoch")
+@patch("amazon_seg_project.ops.train_unet.smp.losses.DiceLoss")
+@patch("amazon_seg_project.ops.train_unet.setup_adam_w")
+@patch("amazon_seg_project.ops.train_unet.create_data_loaders")
 @patch("torch.nn.DataParallel")
 @patch("torch.cuda.device_count", return_value=2)
 @patch("torch.cuda.manual_seed_all")
@@ -71,7 +71,7 @@ def test_single_epoch_training(
     mock_validate_epoch: MagicMock,
     mock_save_model_weights: MagicMock,
     mock_write_loss_data: MagicMock,
-    mock_wandb_artifact: MagicMock,
+    mock_create_log_wandb_artifact: MagicMock,
 ) -> None:
     """
     Check for correct execution of a single epoch of U-net training.
@@ -129,10 +129,6 @@ def test_single_epoch_training(
     mock_train_epoch.return_value = 0.5
     mock_validate_epoch.return_value = {"val_loss": 0.4, "Accuracy": 0.6}
 
-    # Mock artifact.
-    artifact = MagicMock(name="artifact")
-    mock_wandb_artifact.return_value = artifact
-
     # Call the test function.
     train_unet(mock_wandb_run, training_dataset, validation_dataset, model)
 
@@ -175,30 +171,22 @@ def test_single_epoch_training(
         [mock_validate_epoch.return_value["val_loss"]],
         OUTPUT_PATH / "train" / losscurve_csv,
     )
-    mock_wandb_artifact.assert_called_once_with(
-        name=f"unet_with_{encoder}",
-        type="model",
-        metadata={
-            "run_id": mock_wandb_run.id,
-            "encoder": encoder,
-            "lr_initial": lr_initial,
-            "batch_size": batch_size,
-            **mock_validate_epoch.return_value,
-        },
+    mock_create_log_wandb_artifact(
+        mock_wandb_run,
+        str(OUTPUT_PATH / weights_file),
+        mock_validate_epoch.return_value,
     )
-    artifact.add_file.assert_called_once_with(str(OUTPUT_PATH / weights_file))
-    mock_wandb_run.log_artifact.assert_called_once_with(artifact)
 
 
-@patch("wandb.Artifact")
+@patch("amazon_seg_project.ops.train_unet.create_and_log_wandb_artifact")
 @patch("logging.info")
-@patch("amazon_seg_project.ops.wandb_utils.write_loss_data_to_csv")
-@patch("amazon_seg_project.ops.wandb_utils.save_model_weights")
-@patch("amazon_seg_project.ops.wandb_utils.validate_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.train_epoch")
-@patch("amazon_seg_project.ops.wandb_utils.smp.losses.DiceLoss")
-@patch("amazon_seg_project.ops.wandb_utils.setup_adam_w")
-@patch("amazon_seg_project.ops.wandb_utils.create_data_loaders")
+@patch("amazon_seg_project.ops.train_unet.write_loss_data_to_csv")
+@patch("amazon_seg_project.ops.train_unet.save_model_weights")
+@patch("amazon_seg_project.ops.train_unet.validate_epoch")
+@patch("amazon_seg_project.ops.train_unet.train_epoch")
+@patch("amazon_seg_project.ops.train_unet.smp.losses.DiceLoss")
+@patch("amazon_seg_project.ops.train_unet.setup_adam_w")
+@patch("amazon_seg_project.ops.train_unet.create_data_loaders")
 @patch("torch.cuda.device_count", return_value=1)
 @patch("torch.cuda.manual_seed_all")
 @patch("torch.cuda.manual_seed")
@@ -216,7 +204,7 @@ def test_early_stopping(
     mock_save_model_weights: MagicMock,
     mock_write_loss_data: MagicMock,
     mock_logging: MagicMock,
-    mock_wandb_artifact: MagicMock,
+    mock_create_log_wandb_artifact: MagicMock,
 ) -> None:
     """
     Test early stopping of U-net model training on a single GPU system
@@ -269,10 +257,6 @@ def test_early_stopping(
     mock_create_data_loaders.return_value = (mock_train_loader, mock_val_loader)
     mock_adamw_optimizer.return_value = mock_optimizer
     mock_train_epoch.side_effect = mock_train_loss
-
-    # Mock artifact.
-    artifact = MagicMock(name="artifact")
-    mock_wandb_artifact.return_value = artifact
 
     # Set up iterators over mock_val_loss and mock_metric_values.
     val_loss_iter = iter(mock_val_loss)
@@ -346,17 +330,8 @@ def test_early_stopping(
         mock_val_loss[:-1],
         OUTPUT_PATH / "train" / losscurve_csv,
     )
-    mock_wandb_artifact.assert_called_once_with(
-        name=f"unet_with_{encoder}",
-        type="model",
-        metadata={
-            "run_id": mock_wandb_run.id,
-            "encoder": encoder,
-            "lr_initial": lr_initial,
-            "batch_size": batch_size,
-            "val_loss": mock_val_loss[1],
-            "Accuracy": mock_accuracy_values[1],
-        },
+    mock_create_log_wandb_artifact(
+        mock_wandb_run,
+        str(OUTPUT_PATH / weights_file),
+        mock_validate_epoch.return_value,
     )
-    artifact.add_file.assert_called_once_with(str(OUTPUT_PATH / weights_file))
-    mock_wandb_run.log_artifact.assert_called_once_with(artifact)
