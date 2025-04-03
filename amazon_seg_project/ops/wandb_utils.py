@@ -100,10 +100,15 @@ def run_sweep(config: SweepConfig) -> None:
     """
     Executes a W&B hyperparameter sweep
     """
+    # Start sweep.
     wandb.login()
     sweep_config = make_sweep_config(config)
+    # Set up sweep ID.
     sweep_id = wandb.sweep(sweep_config, project=config.project, entity=config.entity)
     logging.info("Sweep ID: %s", sweep_id)
+    # Execute sweep.
     wandb.agent(sweep_id, function=run_wandb_exp)
-    promote_best_model_to_registry(config.entity, config.project, sweep_id)
+    # Close sweep.
     wandb.finish()
+    # Push model with lowest validation loss to registry.
+    promote_best_model_to_registry(config.entity, config.project, sweep_id)

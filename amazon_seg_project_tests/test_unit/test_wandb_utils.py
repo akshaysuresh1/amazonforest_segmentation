@@ -118,8 +118,8 @@ def test_make_sweep_config_custom_values() -> None:
     )
 
 
-@patch("wandb.finish")
 @patch("amazon_seg_project.ops.wandb_utils.promote_best_model_to_registry")
+@patch("wandb.finish")
 @patch("wandb.agent")
 @patch("logging.info")
 @patch("wandb.sweep")
@@ -129,8 +129,8 @@ def test_run_sweep(
     mock_wandb_sweep: MagicMock,
     mock_logging: MagicMock,
     mock_wandb_agent: MagicMock,
-    mock_promote_model_to_registry: MagicMock,
     mock_wandb_finish: MagicMock,
+    mock_promote_model_to_registry: MagicMock,
 ) -> None:
     """
     Test successful execution of run_sweep() using mocked dependencies.
@@ -151,7 +151,7 @@ def test_run_sweep(
     mock_wandb_agent.assert_called_once_with(
         mock_wandb_sweep.return_value, function=run_wandb_exp
     )
+    mock_wandb_finish.assert_called_once()
     mock_promote_model_to_registry.assert_called_once_with(
         config_object.entity, config_object.project, mock_wandb_sweep.return_value
     )
-    mock_wandb_finish.assert_called_once()
