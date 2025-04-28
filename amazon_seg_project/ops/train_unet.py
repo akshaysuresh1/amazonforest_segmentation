@@ -10,6 +10,7 @@ from dagster import Any as dg_Any
 from wandb.sdk.wandb_run import Run
 import segmentation_models_pytorch as smp
 from segmentation_models_pytorch import Unet
+from .file_naming_conventions import name_weights_file, name_losscurve_csv_file
 from .torch_utils import (
     create_data_loaders,
     setup_adam_w,
@@ -94,8 +95,8 @@ def train_unet(
     epochs_since_improvement = 0
 
     # Set file names reflecting training configuration.
-    weights_file = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt"
-    loss_curve_csv = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_losscurve.csv"
+    weights_file = name_weights_file(encoder, batch_size, lr_initial)
+    loss_curve_csv = name_losscurve_csv_file(encoder, batch_size, lr_initial)
 
     # Begin model training.
     wandb_run.watch(model)

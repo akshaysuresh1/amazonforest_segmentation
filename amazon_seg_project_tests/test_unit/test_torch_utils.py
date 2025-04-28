@@ -14,6 +14,17 @@ from amazon_seg_project.ops.torch_utils import (
     setup_adam_w,
     save_model_weights,
 )
+from amazon_seg_project.ops.model_checks import are_state_dicts_equal
+
+
+class DummyModel(torch.nn.Module):
+    """
+    Dummy model for testing purposes
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.linear = torch.nn.Linear(10, 10)
 
 
 class DummyDataset(Dataset):
@@ -141,7 +152,7 @@ def test_create_data_loaders_custom_inputs() -> None:
 
 def test_setup_adam_w_default_lr() -> None:
     """
-    Test setup_adam_w() with default learning rate of 1.0e-4
+    Test setup_adam_w() with default learning rate of 1.0e-4.
     """
     # Set up a mock model with tensor parameters for testing.
     mock_model = MagicMock()
@@ -163,7 +174,7 @@ def test_setup_adam_w_default_lr() -> None:
 
 def test_setup_adam_w_custom_lr() -> None:
     """
-    Test setup_adam_w() with a custom learning rate
+    Test setup_adam_w() with a custom learning rate.
     """
     custom_lr = 2.0e-5
     # Set up a mock model with tensor parameters for testing.
@@ -194,13 +205,11 @@ def test_save_model_weights_valid_file_extension(
     mock_torch_save: MagicMock,
 ) -> None:
     """
-    Test save_model_weights() for a .pt file extension
+    Test save_model_weights() for a .pt file extension.
     """
     mock_filepath = Path("main/subdir/weights.pt")
-    # Create a mock model for testing purposes.
-    mock_model = MagicMock()
-    model_state_dict = {"param1": 2.75}
-    mock_model.state_dict.return_value = model_state_dict
+    # Create a dummy model for testing purposes.
+    mock_model = DummyModel()
 
     # Call the test function.
     save_model_weights(mock_model, mock_filepath)
@@ -209,7 +218,10 @@ def test_save_model_weights_valid_file_extension(
     mock_create_directories.assert_called_once_with(mock_filepath)
 
     # Verify that torch.save() was called once.
-    mock_torch_save.assert_called_once_with(model_state_dict, str(mock_filepath))
+    mock_torch_save.assert_called_once
+    args, _ = mock_torch_save.call_args
+    assert are_state_dicts_equal(args[0], mock_model.state_dict())
+    assert args[1] == str(mock_filepath)
 
     # Check for correct logging output.
     mock_logging.assert_called_once_with(
@@ -226,13 +238,11 @@ def test_save_model_weights_incomplete_file_extension(
     mock_torch_save: MagicMock,
 ) -> None:
     """
-    Test save_model_weights() for an incomplete file extension
+    Test save_model_weights() for an incomplete file extension.
     """
     mock_filepath = Path("main/subdir/weights")
-    # Create a mock model for testing purposes.
-    mock_model = MagicMock()
-    model_state_dict = {"param1": 2.75}
-    mock_model.state_dict.return_value = model_state_dict
+    # Create a dummy model for testing purposes.
+    mock_model = DummyModel()
 
     # Call the test function.
     save_model_weights(mock_model, mock_filepath)
@@ -242,7 +252,42 @@ def test_save_model_weights_incomplete_file_extension(
     mock_create_directories.assert_called_once_with(complete_filepath)
 
     # Verify that torch.save() was called once.
-    mock_torch_save.assert_called_once_with(model_state_dict, complete_filepath)
+    mock_torch_save.assert_called_once
+    args, _ = mock_torch_save.call_args
+    assert are_state_dicts_equal(args[0], mock_model.state_dict())
+    assert args[1] == complete_filepath
+
+    # Check for correct logging output.
+    mock_logging.assert_called_once_with("Saved model weights to %s", complete_filepath)
+
+
+@patch("torch.save")
+@patch("amazon_seg_project.ops.torch_utils.create_directories")
+@patch("logging.info")
+def test_save_model_weights_with_data_parallel(
+    mock_logging: MagicMock,
+    mock_create_directories: MagicMock,
+    mock_torch_save: MagicMock,
+) -> None:
+    """
+    Test save_model_weights() for a model wrapped in torch.nn.DataParallel.
+    """
+    mock_filepath = Path("main/subdir/weights")
+    # Create a dummy model wrapped in torch.nn.DataParallel for testing purposes.
+    mock_model = torch.nn.DataParallel(DummyModel())
+
+    # Call the test function.
+    save_model_weights(mock_model, mock_filepath)
+
+    # Assert that create_directories() was called once.
+    complete_filepath = str(mock_filepath) + ".pt"
+    mock_create_directories.assert_called_once_with(complete_filepath)
+
+    # Verify that torch.save() was called once.
+    mock_torch_save.assert_called_once
+    args, _ = mock_torch_save.call_args
+    assert are_state_dicts_equal(args[0], mock_model.module.state_dict())
+    assert args[1] == complete_filepath
 
     # Check for correct logging output.
     mock_logging.assert_called_once_with("Saved model weights to %s", complete_filepath)

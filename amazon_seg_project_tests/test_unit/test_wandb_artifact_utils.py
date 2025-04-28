@@ -3,10 +3,13 @@ Unit tests for ops defined in wandb_artifact_utils.py
 """
 
 from unittest.mock import patch, MagicMock
+import wandb
 from amazon_seg_project.ops.wandb_artifact_utils import (
     create_and_log_wandb_artifact,
     promote_best_model_to_registry,
+    check_artifact_exists,
 )
+import wandb.errors
 
 
 @patch("wandb.Artifact")
@@ -209,4 +212,88 @@ def test_no_unique_model_weights_file_for_best_run(
     mock_run.logged_artifacts.assert_called_once()
     mock_logging.assert_called_once_with(
         "There exists no unique model weights file associated with run %s.", mock_run.id
+    )
+
+
+@patch("wandb.Api")
+def test_artifact_exists(mock_wandb_api: MagicMock) -> None:
+    """
+    Test for check_artifact_exists() when artifact is available.
+    """
+    mock_artifact_path = "entity/collection/artifact_name"
+    mock_artifact_version = "v0"
+
+    # Create mock API.
+    api = MagicMock(name="api")
+    mock_wandb_api.return_value = api
+
+    # Create mock artifact.
+    mock_artifact = MagicMock(name="mock-artifact")
+    mock_wandb_api.artifact.return_value = mock_artifact
+
+    # Call the test function and assert for True output.
+    assert check_artifact_exists(mock_artifact_path, mock_artifact_version)
+
+    # Assertions
+    mock_wandb_api.assert_called_once()
+    api.artifact.assert_called_once_with(
+        f"{mock_artifact_path}:{mock_artifact_version}"
+    )
+
+
+@patch("logging.error")
+@patch("wandb.Api")
+def test_artifact_communication_error(
+    mock_wandb_api: MagicMock,
+    mock_logging_error: MagicMock,
+) -> None:
+    """
+    Test for check_artifact_exists() when there is a communication error.
+    """
+    mock_artifact_path = "entity/collection/artifact_name"
+    mock_artifact_version = "v0"
+
+    # Create mock API.
+    api = MagicMock(name="api")
+    mock_wandb_api.return_value = api
+
+    # Setup error for api.artifact
+    api.artifact.side_effect = wandb.errors.CommError("Mocked communication error")
+
+    # Call the test function.
+    result = check_artifact_exists(mock_artifact_path, mock_artifact_version)
+
+    # Assertions
+    assert not result
+    mock_logging_error.assert_called_once_with(
+        "Communication error detected:", "Mocked communication error"
+    )
+
+
+@patch("logging.error")
+@patch("wandb.Api")
+def test_artifact_does_not_exist(
+    mock_wandb_api: MagicMock,
+    mock_logging_error: MagicMock,
+) -> None:
+    """
+    Test for check_artifact_exists() when artifact is absent.
+    """
+    mock_artifact_path = "entity/collection/artifact_name"
+    mock_artifact_version = "v0"
+
+    # Create mock API.
+    api = MagicMock(name="api")
+    mock_wandb_api.return_value = api
+
+    # Setup error for api.artifact
+    api.artifact.side_effect = ValueError("Mocked ValueError")
+
+    # Call the test function.
+    result = check_artifact_exists(mock_artifact_path, mock_artifact_version)
+
+    # Assertions
+    assert not result
+    mock_logging_error.assert_called_once_with(
+        "Artifact not found or invalid:", "Mocked ValueError"
     )

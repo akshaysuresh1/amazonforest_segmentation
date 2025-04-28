@@ -9,6 +9,10 @@ from amazon_seg_project.assets import SegmentationDataset
 from amazon_seg_project.data_paths import OUTPUT_PATH
 from amazon_seg_project.ops.aug_utils import get_aug_pipeline
 from amazon_seg_project.ops.train_unet import train_unet
+from amazon_seg_project.ops.file_naming_conventions import (
+    name_weights_file,
+    name_losscurve_csv_file,
+)
 from amazon_seg_project.resources import device
 
 
@@ -95,8 +99,8 @@ def test_single_epoch_training(
     encoder = mock_wandb_config.get("encoder_name")
     batch_size = mock_wandb_config.get("batch_size")
     lr_initial = mock_wandb_config.get("lr_initial")
-    weights_file = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt"
-    losscurve_csv = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_losscurve.csv"
+    weights_file = name_weights_file(encoder, batch_size, lr_initial)
+    losscurve_csv = name_losscurve_csv_file(encoder, batch_size, lr_initial)
     training_dataset = SegmentationDataset(
         images_list=[],
         masks_list=[],
@@ -226,8 +230,8 @@ def test_early_stopping(
     encoder = mock_wandb_config.get("encoder_name")
     batch_size = mock_wandb_config.get("batch_size")
     lr_initial = mock_wandb_config.get("lr_initial")
-    weights_file = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_weights.pt"
-    losscurve_csv = f"{encoder}_batch{batch_size}_lr{lr_initial:.1e}_losscurve.csv"
+    weights_file = name_weights_file(encoder, batch_size, lr_initial)
+    losscurve_csv = name_losscurve_csv_file(encoder, batch_size, lr_initial)
     training_dataset = SegmentationDataset(
         images_list=[],
         masks_list=[],

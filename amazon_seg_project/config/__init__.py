@@ -25,9 +25,21 @@ class BasicUnetConfig(Config):
 
     encoder_name: str = Field(default="resnet50")
     encoder_weights: str | None = Field(default="imagenet")
+    freeze_encoder_weights: bool = Field(default=True)
     in_channels: int = Field(default=4)
     activation: str = Field(default="sigmoid")
     model_seed: int = Field(default=137)
+
+
+class TrainedUnetConfig(Config):
+    """
+    Tunable parameters of asset "trained_unet_model"
+    """
+
+    wandb_artifact_path: str = Field(default="akshaysuresh1/model-registry/unet-models")
+    wandb_artifact_version: str = Field(default="latest")
+    in_channels: int = Field(default=4)
+    activation: str = Field(default="sigmoid")
 
 
 class SweepConfig(Config):

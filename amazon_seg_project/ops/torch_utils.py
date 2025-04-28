@@ -12,7 +12,6 @@ from torch import optim
 from torch.utils.data import DataLoader
 from dagster import op, In, Out
 from dagster import Any as dg_Any
-from segmentation_models_pytorch import Unet
 from .metrics import smp_metrics
 from .write_files import create_directories
 
@@ -93,7 +92,7 @@ def create_data_loaders(
 
 
 @op(ins={"model": In(dg_Any), "lr_initial": In(float)}, out=Out(dg_Any))
-def setup_adam_w(model: Unet, lr_initial: float = 1.0e-4) -> optim.AdamW:
+def setup_adam_w(model: torch.nn.Module, lr_initial: float = 1.0e-4) -> optim.AdamW:
     """
     Sets up the AdamW optimizer for training the given U-Net model.
 
@@ -119,7 +118,7 @@ def setup_adam_w(model: Unet, lr_initial: float = 1.0e-4) -> optim.AdamW:
     out=Out(float),
 )
 def train_epoch(
-    model: Unet,
+    model: torch.nn.Module,
     train_loader: DataLoader,
     optimizer: Any,
     criterion: Any,
@@ -176,7 +175,7 @@ def train_epoch(
     out=Out(dg_Any),
 )
 def validate_epoch(
-    model: Unet,
+    model: torch.nn.Module,
     val_loader: DataLoader,
     criterion: Any,
     val_device: torch.device,
@@ -248,7 +247,7 @@ def validate_epoch(
 
 
 @op(ins={"model": In(dg_Any), "filepath": In(dg_Any)})
-def save_model_weights(model: Unet, filepath: Union[str, os.PathLike]) -> None:
+def save_model_weights(model: torch.nn.Module, filepath: Union[str, os.PathLike]) -> None:
     """
     Saves U-Net model weights to the specified filepath.
 
@@ -260,5 +259,8 @@ def save_model_weights(model: Unet, filepath: Union[str, os.PathLike]) -> None:
     if not str(filepath).endswith(".pt"):
         filepath = str(filepath) + ".pt"
     create_directories(filepath)
-    torch.save(model.state_dict(), str(filepath))
+    if isinstance(model, torch.nn.DataParallel):
+        torch.save(model.module.state_dict(), str(filepath))
+    else:
+        torch.save(model.state_dict(), str(filepath))
     logging.info("Saved model weights to %s", str(filepath))

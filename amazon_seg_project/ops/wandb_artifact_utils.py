@@ -87,7 +87,7 @@ def promote_best_model_to_registry(entity: str, project: str, sweep_id: str) -> 
         return None
     artifact = logged_artifacts[0]
 
-    # Add alias "best_model" to artifact from best run/
+    # Add alias "best_model" to artifact from best run.
     artifact.aliases.append("best_model")
     artifact.save()
 
@@ -96,3 +96,24 @@ def promote_best_model_to_registry(entity: str, project: str, sweep_id: str) -> 
         run.link_artifact(
             artifact=artifact, target_path=f"{entity}/model-registry/unet-models"
         )
+
+
+@op
+def check_artifact_exists(artifact_path: str, artifact_version: str) -> bool:
+    """
+    Check if specified artifact exists on the W&B registry.
+
+    Args:
+        artifact_path: Artifact path including entity, collection, and artifact name
+        artifact_version: Version string of artifact
+    """
+    api = wandb.Api()
+    try:
+        _ = api.artifact(f"{artifact_path}:{artifact_version}")
+    except wandb.errors.CommError as e:
+        logging.error("Communication error detected:", str(e))
+        return False
+    except ValueError as e:
+        logging.error("Artifact not found or invalid:", str(e))
+        return False
+    return True

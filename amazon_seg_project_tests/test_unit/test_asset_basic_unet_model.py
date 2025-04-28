@@ -1,5 +1,5 @@
 """
-Unit tests for unet_model()
+Unit tests for asset "basic_unet_model"
 """
 
 from unittest.mock import patch, MagicMock
@@ -18,6 +18,7 @@ def test_model_creation(mock_smp_unet: MagicMock, mock_torch_seed: MagicMock) ->
     model_config = BasicUnetConfig(
         encoder_name="resnet34",
         encoder_weights=None,
+        freeze_encoder_weights=False,
         in_channels=3,
         activation="sigmoid",
         model_seed=28,
@@ -44,8 +45,6 @@ def test_model_creation(mock_smp_unet: MagicMock, mock_torch_seed: MagicMock) ->
         in_channels=model_config.in_channels,
         activation=model_config.activation,
     )
-    # Assert that the loop to freeze encoder weights was initiated.
-    mock_model.encoder.parameters.assert_called_once()
 
 
 def test_model_parameter_settings() -> None:
@@ -57,6 +56,7 @@ def test_model_parameter_settings() -> None:
     model_config = BasicUnetConfig(
         encoder_name="resnet34",
         encoder_weights=None,
+        freeze_encoder_weights=True,
         in_channels=3,
         activation="sigmoid",
         model_seed=28,
