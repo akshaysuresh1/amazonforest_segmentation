@@ -4,6 +4,8 @@ Utility functions for data scaling
 
 import numpy as np
 import numpy.typing as npt
+from dagster import op, In, Out
+from dagster import Any as dg_Any
 from ..resources import ScalarTypeT
 
 
@@ -35,6 +37,31 @@ def robust_scaling(
         )
     # Normalization = (data - mean) / standard deviation
     normalized_data = (data - means[np.newaxis, np.newaxis, :]) / sigma[
+        np.newaxis, np.newaxis, :
+    ]
+    return normalized_data
+
+
+@op(ins={"data": In(dg_Any)}, out=Out(dg_Any))
+def min_max_scaling(data: npt.NDArray[ScalarTypeT]) -> npt.NDArray[ScalarTypeT]:
+    """
+    Apply min-maxing scaling on a per-channel basis for image normalization to [0, 1].
+
+    Args:
+        data: 3D numpy array of shape (n_y, n_x, n_bands)
+
+    Returns: Normalized data array
+    """
+    if data.ndim != 3:
+        raise ValueError("Input data array must be 3-dimensional.")
+
+    # Evaluate maximum and minimum of data values per color channel.
+    min_vals = np.nanmin(data, axis=(0, 1))
+    max_vals = np.nanmax(data, axis=(0, 1))
+    range_vals = max_vals - min_vals
+
+    # Perform min-max scaling separately for each color channel.
+    normalized_data = (data - min_vals[np.newaxis, np.newaxis, :]) / range_vals[
         np.newaxis, np.newaxis, :
     ]
     return normalized_data
