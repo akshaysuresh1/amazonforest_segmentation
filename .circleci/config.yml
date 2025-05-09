@@ -1,52 +1,32 @@
 version: 2.1
+
 jobs:
-  test:
+  build_and_test:
     docker:
-      - image: cimg/python:3.12.4  # Example using a Python image
+      - image: cimg/python:3.12.7  # Docker image as executor
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: Install dependencies and run tests
           command: |
-            python --version
+            python3 -m venv venv
+            . venv/bin/activate
             pip install --upgrade pip
-            pip install -e ".[dev]"
-      - run:
-          name: Run tests
-          command: |
-            pytest
+            pip install ".[dev]"
 
-  build:
-    docker:
-      - image: cimg/python:3.12.4  
-    steps:
-      - checkout
-      - run:
-          name: Build artifact
-          command: |
-            echo "Building artifact..."
-            # Replace with actual build commands if needed
+            # Run unit tests.
+            pytest -v amazon_seg_project_tests/test_unit
 
-  deploy:
-    docker:
-      - image: cimg/python:3.12.4
-    steps:
-      - checkout
-      - run:
-          name: Deploy to production
-          command: |
-            echo "Deploying to production..."
-            # Replace with actual deployment commands if needed
+            # Run integration tests.
+            pytest -v amazon_seg_project_tests/test_integration
 
 workflows:
   version: 2
-  example:
+  build_test_deploy:
     jobs:
-      - test:
+      - build_and_test:
           context: AWS_access
-      - build:
-          requires:
-            - test
-      - deploy:
-          requires:
-            - build
+          filters:
+            branches:
+              only:  # Only branches matching the below regex filters will run.
+                - dagster

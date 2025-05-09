@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "amazon_seg_project"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error", # treat all warnings as errors
+    "ignore:.*custom tp_new.*in Python 3.14.*:DeprecationWarning",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning:botocore",
+]
+
+[tool.mypy]
+ignore_missing_imports = false  # Default behavior to not ignore imports globally
+
+# Specific overrides for multiple packages
+[[tool.mypy.overrides]]
+module = [
+    "albumentations",
+    "boto3",
+    "botocore.exceptions",
+    "botocore.response",
+    "pandas",
+    "segmentation_models_pytorch",
+    "setuptools",
+    "tqdm",
+]
+ignore_missing_imports = true

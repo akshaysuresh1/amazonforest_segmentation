@@ -166,3 +166,10 @@ cython_debug/
 
 # VScode settings
 .vscode/
+
+# Output directory
+outputs/
+
+# W&B run and artifacts directory
+wandb/
+artifacts/
