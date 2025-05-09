@@ -14,7 +14,7 @@ def robust_scaling(
     data: npt.NDArray[ScalarTypeT],
     means: npt.NDArray[ScalarTypeT] = np.array([622.59, 683.14, 436.69, 2951.97]),
     sigma: npt.NDArray[ScalarTypeT] = np.array([541.08, 368.43, 342.26, 633.47]),
-) -> npt.NDArray[ScalarTypeT]:
+) -> npt.NDArray[np.float64]:
     """
     Normalize image data using input channel-wise means and standard deviations.
 
@@ -36,9 +36,9 @@ def robust_scaling(
             "Data, means, and standard deviation arrays have unequal number of color channels."
         )
     # Normalization = (data - mean) / standard deviation
-    normalized_data = (data - means[np.newaxis, np.newaxis, :]) / sigma[
-        np.newaxis, np.newaxis, :
-    ]
+    normalized_data = (
+        (data - means[np.newaxis, np.newaxis, :]) / sigma[np.newaxis, np.newaxis, :]
+    ).astype(np.float64)
     return normalized_data
 
 
