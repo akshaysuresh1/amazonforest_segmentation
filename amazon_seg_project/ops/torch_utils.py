@@ -247,7 +247,9 @@ def validate_epoch(
 
 
 @op(ins={"model": In(dg_Any), "filepath": In(dg_Any)})
-def save_model_weights(model: torch.nn.Module, filepath: Union[str, os.PathLike]) -> None:
+def save_model_weights(
+    model: torch.nn.Module, filepath: Union[str, os.PathLike]
+) -> None:
     """
     Saves U-Net model weights to the specified filepath.
 
@@ -264,3 +266,31 @@ def save_model_weights(model: torch.nn.Module, filepath: Union[str, os.PathLike]
     else:
         torch.save(model.state_dict(), str(filepath))
     logging.info("Saved model weights to %s", str(filepath))
+
+
+@op(ins={"prob_tensor": In(dg_Any), "threshold_prob": In(float)}, out=Out(dg_Any))
+def apply_prob_thresholding(
+    prob_tensor: torch.Tensor, threshold_prob: float
+) -> torch.Tensor:
+    """
+    Apply thresholding on a tensor of probabilities.
+    Probability values <= threshold are mapped to 0.
+    Probability values > threshold are mapped to 1.
+
+    Args:
+        prob_tensor: Probability tensor
+        threshold_prob: Threshold probability
+
+    Returns: Thresholded binary tensor
+    """
+    if prob_tensor.max() > 1.0:
+        raise ValueError("Input tensor does not contain probabilities. Max value > 1.")
+
+    if prob_tensor.min() < 0.0:
+        raise ValueError("Input tensor does not contain probabilities. Min value < 0.")
+
+    if not 0 <= threshold_prob <= 1.0:
+        raise ValueError("Threshold value must be a probability.")
+
+    binary_tensor = (prob_tensor > threshold_prob).int()
+    return binary_tensor
