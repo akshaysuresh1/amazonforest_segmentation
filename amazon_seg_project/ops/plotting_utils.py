@@ -5,6 +5,7 @@ Utility functions for data visualization
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap
 from dagster import op, In, Out
 from dagster import Any as dg_Any
@@ -175,4 +176,83 @@ def visualize_and_save_model_predictions(
 
     # Save the figure to disk.
     plt.savefig(basename + "_results.png")
+    plt.close()
+
+
+@op(
+    ins={
+        "precision_vals": In(dg_Any),
+        "recall_vals": In(dg_Any),
+        "threshold_vals": In(dg_Any),
+        "n_positive_samples": In(dg_Any),
+        "n_samples": In(dg_Any),
+        "basename": In(str),
+    }
+)
+def plot_precision_recall_curve(
+    precision_vals: npt.NDArray[ScalarTypeT],
+    recall_vals: npt.NDArray[ScalarTypeT],
+    threshold_vals: npt.NDArray[ScalarTypeT],
+    n_positive_samples: int | None = None,
+    n_samples: int | None = None,
+    basename: str = "result",
+) -> None:
+    """
+    Plot a precision-recall curve with color-coded binarization threshold values.
+
+    Args:
+        precision_vals: 1D array of precision values at different thresholds
+        recall_vals: 1D array of recall values at different thresholds
+        threshold_vals: 1D array of threshold values
+        n_positive_samples: Count of positive samples in dataset
+        n_total_samples: Total number of samples in dataset
+        basename: Output plot basename (include path)
+    """
+    # Area under precision-recall curve
+    pr_auc = abs(np.trapz(precision_vals, recall_vals))
+
+    # Prepare segments for color-coding
+    points = np.array([recall_vals, precision_vals]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    # Normalize threshold values for color mapping.
+    norm = plt.Normalize(threshold_vals.min(), threshold_vals.max())
+    lc = LineCollection(segments, cmap="cividis", norm=norm)
+    lc.set_array(threshold_vals)
+    lc.set_linewidth(2)
+
+    # Plotting
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 5))
+    # Add dotted line for baseline model.
+    if n_samples is not None and n_positive_samples is not None:
+        baseline_precision = n_positive_samples / n_samples
+        ax.hlines(y=baseline_precision, xmin=0, xmax=1, linestyle=":", color="k")
+        ax.annotate(
+            "Baseline always positive model",
+            xy=(0.2, baseline_precision + 0.01),
+            xycoords="data",
+            fontsize=12,
+        )
+    # Create colored line for precision-recall curve.
+    line = ax.add_collection(lc)
+    fig.colorbar(line, ax=ax, label="Threshold")
+    # Add annotation for area under curve computed using trapezoidal rule.
+    ax.annotate(
+        f"AUC = {pr_auc:.3f}",
+        xy=(0.3, 0.8),
+        xycoords="data",
+        fontsize=12,
+        ha="right",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
+    )
+    # Set axes limits.
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.05)
+    # Set axes labels.
+    ax.set_xlabel("Recall", fontsize=12)
+    ax.set_ylabel("Precision", fontsize=12)
+    plt.tight_layout()
+    # Save and close the figure.
+    plt.savefig(basename + "_precision_recall_curve.png")
     plt.close()

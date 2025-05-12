@@ -10,6 +10,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from amazon_seg_project.ops.plotting_utils import (
     create_ndvi_colormap,
     visualize_and_save_model_predictions,
+    plot_precision_recall_curve,
 )
 
 
@@ -325,4 +326,103 @@ def test_visualize_and_save_model_predictions(
     )
     # Assert for saving and closing figure.
     mock_plt_savefig.assert_called_once_with(basename + "_results.png")
+    mock_plt_close.assert_called_once()
+
+
+@patch("matplotlib.pyplot.close")
+@patch("matplotlib.pyplot.savefig")
+@patch("matplotlib.pyplot.tight_layout")
+@patch("matplotlib.pyplot.subplots")
+@patch("amazon_seg_project.ops.plotting_utils.LineCollection")
+@patch("matplotlib.pyplot.Normalize")
+def test_plot_precision_recall_curve_execution(
+    mock_plt_normalize: MagicMock,
+    mock_LineCollection: MagicMock,
+    mock_plt_subplots: MagicMock,
+    mock_plt_tight_layout: MagicMock,
+    mock_plt_savefig: MagicMock,
+    mock_plt_close: MagicMock,
+) -> None:
+    """
+    Test for correct plotting using mocked dependencies.
+    """
+    # Create dummy inputs.
+    precision_vals = np.array([0.8, 0.7, 0.6])
+    recall_vals = np.array([0.6, 0.7, 0.8])
+    threshold_vals = np.array([0.2, 0.5, 0.8])
+    n_positive_samples = 10
+    n_samples = 100
+    basename = "test_plot"
+
+    # Expected intermediate compute products
+    points = np.array([recall_vals, precision_vals]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    baseline_precision = n_positive_samples / n_samples
+    pr_auc = abs(np.trapz(precision_vals, recall_vals))
+
+    # Set up mock dependencies.
+    mock_fig = MagicMock(name="mock-figure")
+    mock_ax = MagicMock(name="mock-ax")
+    mock_plt_subplots.return_value = (mock_fig, mock_ax)
+
+    mock_lc = MagicMock(name="mock-lc")
+    mock_LineCollection.return_value = mock_lc
+
+    mock_line = MagicMock(name="mock-colored-line")
+    mock_ax.add_collection.return_value = mock_line
+
+    # Call the test function.
+    plot_precision_recall_curve(
+        precision_vals,
+        recall_vals,
+        threshold_vals,
+        n_positive_samples=n_positive_samples,
+        n_samples=n_samples,
+        basename=basename,
+    )
+
+    # Assertions
+    mock_plt_normalize.assert_called_once_with(threshold_vals[0], threshold_vals[-1])
+    # LineCollection initialization
+    args, kwargs = mock_LineCollection.call_args
+    np.testing.assert_array_equal(args[0], segments)
+    assert kwargs["cmap"] == "cividis"
+    assert kwargs["norm"] == mock_plt_normalize.return_value
+    mock_lc.set_array.assert_called_once_with(threshold_vals)
+    mock_lc.set_linewidth.assert_called_once_with(2)
+    # Subplot creation
+    mock_plt_subplots.assert_called_once_with(nrows=1, ncols=1, figsize=(6, 5))
+    # Dotted line for baseline always positive model
+    mock_ax.hlines.assert_called_once_with(
+        y=baseline_precision, xmin=0, xmax=1, linestyle=":", color="k"
+    )
+    mock_ax.annotate.assert_any_call(
+        "Baseline always positive model",
+        xy=(0.2, baseline_precision + 0.01),
+        xycoords="data",
+        fontsize=12,
+    )
+    # Assertion for colored line creation in ax.
+    mock_ax.add_collection.assert_called_once_with(mock_lc)
+    mock_fig.colorbar.assert_called_once_with(mock_line, ax=mock_ax, label="Threshold")
+    # Annotation for AUC
+    mock_ax.annotate.assert_any_call(
+        f"AUC = {pr_auc:.3f}",
+        xy=(0.3, 0.8),
+        xycoords="data",
+        fontsize=12,
+        ha="right",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
+    )
+    # Assertion for axes limits
+    mock_ax.set_xlim.assert_called_once_with(0, 1)
+    mock_ax.set_ylim.assert_called_once_with(0, 1.05)
+    # Assertion for axes labels
+    mock_ax.set_xlabel.assert_called_once_with("Recall", fontsize=12)
+    mock_ax.set_ylabel.assert_called_once_with("Precision", fontsize=12)
+    # Check for a single call of plt.tight_layout().
+    mock_plt_tight_layout.assert_called_once()
+    # Assert for saving and closing figure.
+    mock_plt_savefig.assert_called_once_with(basename + "_precision_recall_curve.png")
     mock_plt_close.assert_called_once()
