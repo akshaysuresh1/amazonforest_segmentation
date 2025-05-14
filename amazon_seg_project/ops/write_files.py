@@ -6,6 +6,7 @@ import os
 import logging
 from typing import List, Union
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from dagster import op, In
 from dagster import Any as dg_Any
@@ -44,7 +45,7 @@ def write_stats_to_csv(
     outcsv: Union[str, os.PathLike],
 ) -> None:
     """
-    Write channel-wise mean and standard deviation info to a .csv file
+    Write channel-wise mean and standard deviation info to a .csv file.
 
     Args:
         means: Channel-wise mean of a multispectral dataset
@@ -80,12 +81,12 @@ def write_loss_data_to_csv(
     train_loss: List[float], val_loss: List[float], outcsv: Union[str, os.PathLike]
 ) -> None:
     """
-    Saves the training and validation loss curve data to a CSV file.
+    Saves the training and validation loss curve data to a .csv file.
 
     Args:
-        train_loss: List of training losses.
-        val_loss: List of validation losses.
-        outcsv: Name (including path) of CSV file to be saved.
+        train_loss: List of training losses
+        val_loss: List of validation losses
+        outcsv: Name (including path) of .csv file to be saved
     """
     if len(train_loss) != len(val_loss):
         raise ValueError("Input lists have different lengths.")
@@ -104,3 +105,44 @@ def write_loss_data_to_csv(
 
     # Write Pandas DataFrame to "outcsv".
     loss_df.to_csv(str(outcsv), index=False)
+
+
+@op(
+    ins={
+        "precision": In(dg_Any),
+        "recall": In(dg_Any),
+        "threshold": In(dg_Any),
+        "outcsv": In(dg_Any),
+    }
+)
+def write_precision_recall_data(
+    precision: npt.NDArray[np.float_],
+    recall: npt.NDArray[np.float_],
+    threshold: npt.NDArray[np.float_],
+    outcsv: Union[str, os.PathLike],
+) -> None:
+    """
+    Save data points from a precision-recall curve to a .csv file.
+
+    Args:
+        precision: Precision values at different binarization thresholds
+        recall: Recall values at different binarization thresholds
+        threshold: Binarization thresholds
+        outcsv: Name (including path) of .csv file to be saved
+    """
+    if not len(precision) == len(recall) == len(threshold):
+        raise ValueError("Input arrays have unequal lengths.")
+
+    # Append .csv extension if not found at end of file name.
+    if not str(outcsv).endswith(".csv"):
+        outcsv = str(outcsv) + ".csv"
+
+    prec_recall_curve_df = pd.DataFrame(
+        {"threshold": threshold, "recall": recall, "precision": precision}
+    )
+
+    # Create parent directories if non-existent.
+    create_directories(outcsv)
+
+    # Write Pandas DataFrame to "outcsv".
+    prec_recall_curve_df.to_csv(str(outcsv), index=False)
