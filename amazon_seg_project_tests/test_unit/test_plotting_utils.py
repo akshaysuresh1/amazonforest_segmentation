@@ -329,6 +329,23 @@ def test_visualize_and_save_model_predictions(
     mock_plt_close.assert_called_once()
 
 
+def test_plot_precision_recall_curve_unequal_input_lengths() -> None:
+    """
+    Check for correct raise of ValueError upon execution with unequal input array lengths.
+    """
+    with pytest.raises(
+        ValueError,
+        match="Precision, recall, and threshold arrays must have the same length.",
+    ):
+        # Create dummy inputs.
+        precision_vals = np.array([0.8, 0.7, 0.6])
+        recall_vals = np.array([0.6, 0.7, 0.8])
+        threshold_vals = np.array([0.2, 0.5, 0.6, 0.8])
+
+        # Call the test function.
+        plot_precision_recall_curve(precision_vals, recall_vals, threshold_vals)
+
+
 @patch("matplotlib.pyplot.close")
 @patch("matplotlib.pyplot.savefig")
 @patch("matplotlib.pyplot.tight_layout")
@@ -350,6 +367,7 @@ def test_plot_precision_recall_curve_execution(
     precision_vals = np.array([0.8, 0.7, 0.6])
     recall_vals = np.array([0.6, 0.7, 0.8])
     threshold_vals = np.array([0.2, 0.5, 0.8])
+    max_f1_idx = 1
     n_positive_samples = 10
     n_samples = 100
     basename = "test_plot"
@@ -382,7 +400,7 @@ def test_plot_precision_recall_curve_execution(
     )
 
     # Assertions
-    mock_plt_normalize.assert_called_once_with(threshold_vals[0], threshold_vals[-1])
+    mock_plt_normalize.assert_called_once_with(vmin=0.0, vmax=1.0, clip=True)
     # LineCollection initialization
     args, kwargs = mock_LineCollection.call_args
     np.testing.assert_array_equal(args[0], segments)
@@ -414,6 +432,16 @@ def test_plot_precision_recall_curve_execution(
         ha="right",
         va="bottom",
         bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
+    )
+    # Assertion for plotting marker at data point with the highest F1 score
+    mock_ax.plot.assert_called_once_with(
+        recall_vals[max_f1_idx],
+        precision_vals[max_f1_idx],
+        marker="*",
+        markeredgecolor="black",
+        markerfacecolor="darkorange",
+        markersize=12,
+        linestyle="None",
     )
     # Assertion for axes limits
     mock_ax.set_xlim.assert_called_once_with(0, 1)

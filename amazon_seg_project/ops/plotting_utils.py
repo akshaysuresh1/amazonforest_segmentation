@@ -9,8 +9,9 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap
 from dagster import op, In, Out
 from dagster import Any as dg_Any
-from ..ops.image_processing_utils import compute_ndvi
-from ..ops.scaling_utils import min_max_scaling
+from .image_processing_utils import compute_ndvi
+from .metrics import compute_f1_scores
+from .scaling_utils import min_max_scaling
 from ..resources import ScalarTypeT
 
 
@@ -208,6 +209,15 @@ def plot_precision_recall_curve(
         n_total_samples: Total number of samples in dataset
         basename: Output plot basename (include path)
     """
+    if not len(precision_vals) == len(recall_vals) == len(threshold_vals):
+        raise ValueError(
+            "Precision, recall, and threshold arrays must have the same length."
+        )
+
+    # F1 scores
+    f1_scores = compute_f1_scores(precision_vals, recall_vals)
+    max_f1_idx = np.argmax(f1_scores)
+
     # Area under precision-recall curve
     pr_auc = abs(np.trapz(precision_vals, recall_vals))
 
@@ -216,7 +226,7 @@ def plot_precision_recall_curve(
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
     # Normalize threshold values for color mapping.
-    norm = plt.Normalize(threshold_vals.min(), threshold_vals.max())
+    norm = plt.Normalize(vmin=0.0, vmax=1.0, clip=True)
     lc = LineCollection(segments, cmap="cividis", norm=norm)
     lc.set_array(threshold_vals)
     lc.set_linewidth(2)
@@ -245,6 +255,16 @@ def plot_precision_recall_curve(
         ha="right",
         va="bottom",
         bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
+    )
+    # Add marker for data point with the highest F1 score.
+    ax.plot(
+        recall_vals[max_f1_idx],
+        precision_vals[max_f1_idx],
+        marker="*",
+        markeredgecolor="black",
+        markerfacecolor="darkorange",
+        markersize=12,
+        linestyle="None",
     )
     # Set axes limits.
     ax.set_xlim(0, 1)

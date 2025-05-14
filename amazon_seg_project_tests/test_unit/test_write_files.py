@@ -290,10 +290,13 @@ def test_write_precision_recall_data_unequal_input_shapes() -> None:
         )
 
 
+@patch("amazon_seg_project.ops.write_files.compute_f1_scores")
 @patch("amazon_seg_project.ops.write_files.create_directories")
 @patch("pandas.DataFrame")
 def test_write_precision_recall_data_incomplete_filename(
-    mock_df: MagicMock, mock_create_dirs: MagicMock
+    mock_df: MagicMock,
+    mock_create_dirs: MagicMock,
+    mock_compute_f1_scores: MagicMock,
 ) -> None:
     """
     Test write_precision_recall_data() with outcsv lacking ".csv" extension.
@@ -314,13 +317,21 @@ def test_write_precision_recall_data_incomplete_filename(
         precision_values, recall_values, threshold_values, outcsv
     )
 
+    # Assert for call to compute_f1_scores()
+    f1_args, _ = mock_compute_f1_scores.call_args
+    assert len(f1_args) == 2
+    np.testing.assert_array_equal(f1_args[0], precision_values)
+    np.testing.assert_array_equal(f1_args[1], recall_values)
+
     # Assertion for DataFrame object creation
-    mock_df.assert_called_once_with(
-        {
-            "threshold": threshold_values,
-            "recall": recall_values,
-            "precision": precision_values,
-        }
+    args, _ = mock_df.call_args
+    assert len(args) == 1
+    assert isinstance(args[0], dict)
+    np.testing.assert_array_equal(args[0]["Binarization threshold"], threshold_values)
+    np.testing.assert_array_equal(args[0]["Recall"], recall_values)
+    np.testing.assert_array_equal(args[0]["Precision"], precision_values)
+    np.testing.assert_array_equal(
+        args[0]["F1 score"], mock_compute_f1_scores.return_value
     )
 
     # Assertion for parent directory creation.
@@ -329,10 +340,13 @@ def test_write_precision_recall_data_incomplete_filename(
     mock_df_object.to_csv.assert_called_once_with(final_csv, index=False)
 
 
+@patch("amazon_seg_project.ops.write_files.compute_f1_scores")
 @patch("amazon_seg_project.ops.write_files.create_directories")
 @patch("pandas.DataFrame")
 def test_write_precision_recall_data_success(
-    mock_df: MagicMock, mock_create_dirs: MagicMock
+    mock_df: MagicMock,
+    mock_create_dirs: MagicMock,
+    mock_compute_f1_scores: MagicMock,
 ) -> None:
     """
     Test write_precision_recall_data() for valid inputs.
@@ -352,13 +366,21 @@ def test_write_precision_recall_data_success(
         precision_values, recall_values, threshold_values, outcsv
     )
 
+    # Assert for call to compute_f1_scores()
+    f1_args, _ = mock_compute_f1_scores.call_args
+    assert len(f1_args) == 2
+    np.testing.assert_array_equal(f1_args[0], precision_values)
+    np.testing.assert_array_equal(f1_args[1], recall_values)
+
     # Assertion for DataFrame object creation
-    mock_df.assert_called_once_with(
-        {
-            "threshold": threshold_values,
-            "recall": recall_values,
-            "precision": precision_values,
-        }
+    args, _ = mock_df.call_args
+    assert len(args) == 1
+    assert isinstance(args[0], dict)
+    np.testing.assert_array_equal(args[0]["Binarization threshold"], threshold_values)
+    np.testing.assert_array_equal(args[0]["Recall"], recall_values)
+    np.testing.assert_array_equal(args[0]["Precision"], precision_values)
+    np.testing.assert_array_equal(
+        args[0]["F1 score"], mock_compute_f1_scores.return_value
     )
 
     # Assertion for parent directory creation.

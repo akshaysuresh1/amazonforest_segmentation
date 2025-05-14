@@ -10,6 +10,7 @@ import numpy.typing as npt
 import pandas as pd
 from dagster import op, In
 from dagster import Any as dg_Any
+from .metrics import compute_f1_scores
 
 
 @op(ins={"filepath": In(dg_Any)})
@@ -137,8 +138,14 @@ def write_precision_recall_data(
     if not str(outcsv).endswith(".csv"):
         outcsv = str(outcsv) + ".csv"
 
+    f1_scores = compute_f1_scores(precision, recall)
     prec_recall_curve_df = pd.DataFrame(
-        {"threshold": threshold, "recall": recall, "precision": precision}
+        {
+            "Binarization threshold": threshold,
+            "Recall": recall,
+            "Precision": precision,
+            "F1 score": f1_scores,
+        }
     )
 
     # Create parent directories if non-existent.
