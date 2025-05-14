@@ -5,9 +5,11 @@ Unit tests for modules defined in amazon_seg_project.ops.metrics
 import math
 import re
 import pytest
+import numpy as np
 import torch
 from amazon_seg_project.ops.metrics import (
     smp_metrics,
+    compute_f1_scores,
     iou_metric,
     dice_coefficient,
     dice_loss,
@@ -95,8 +97,8 @@ def test_smp_metrics_success() -> None:
     result = smp_metrics(predicted, target, threshold=0.4)
 
     # Assertions
-    rtol = 1.0e-6 # Relative tolerance for floating-point comparison
-    atol = 1.0e-8 # Absolute tolerance for floating-point comparison
+    rtol = 1.0e-6  # Relative tolerance for floating-point comparison
+    atol = 1.0e-8  # Absolute tolerance for floating-point comparison
     assert "Accuracy" in result
     assert math.isclose(result.get("Accuracy"), accuracy, rel_tol=rtol, abs_tol=atol)
     assert "Precision" in result
@@ -107,6 +109,39 @@ def test_smp_metrics_success() -> None:
     assert math.isclose(result.get("F1 score"), f1_score, rel_tol=rtol, abs_tol=atol)
     assert "IoU" in result
     assert math.isclose(result.get("IoU"), iou_score, rel_tol=rtol, abs_tol=atol)
+
+
+def test_compute_f1_scores_unequal_input_shapes() -> None:
+    """
+    Test for compute_f1_scores() with unequal input array shapes.
+    """
+    with pytest.raises(
+        ValueError, match="Precision and recall array have unequal shapes."
+    ):
+        # Define test inputs.
+        precision_values = np.random.randn(5)
+        recall_values = np.random.randn(4)
+
+        # Call the test function.
+        compute_f1_scores(precision_values, recall_values)
+
+
+def test_compute_f1_scores_success() -> None:
+    """
+    Test for successful execution of compute_f1_scores().
+    """
+    # Set up test inputs.
+    precision_values = np.random.randn(5)
+    recall_values = np.random.randn(5)
+    expected_output = (
+        2 * precision_values * recall_values / (precision_values + recall_values)
+    )
+
+    # Call the test function.
+    result = compute_f1_scores(precision_values, recall_values)
+
+    # Assertion
+    np.testing.assert_array_almost_equal(expected_output, result)
 
 
 def test_iou_unequal_arrayshapes() -> None:
