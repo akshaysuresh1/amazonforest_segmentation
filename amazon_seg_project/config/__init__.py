@@ -2,9 +2,10 @@
 Config schema for asset definitions
 """
 
-from typing import Dict, Any
+from typing import Dict, List, Any
 from dagster import Config
 from pydantic import Field
+import numpy as np
 
 
 class TrainingDatasetConfig(Config):
@@ -65,3 +66,14 @@ class SweepConfig(Config):
     horizontal_flip_prob: Dict[str, Any] = Field(default={"values": [0.5]})
     vertical_flip_prob: Dict[str, Any] = Field(default={"values": [0.5]})
     rotate90_prob: Dict[str, Any] = Field(default={"values": [0.5]})
+
+
+class PrecRecallCurveConfig(Config):
+    """
+    Configurable parameters for generating a precision-recall curve
+    """
+
+    # 1D array of threshold values
+    thresholds_list: List[float] = Field(
+        default=[1.0e-6, 1.0e-3] + np.arange(0.05, 1.05, 0.05).round(2).tolist()
+    )  # Use small values in place of 0 to accommodate numerical uncertainty.
