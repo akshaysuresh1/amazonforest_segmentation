@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 from botocore.response import StreamingBody
 from amazon_seg_project.ops.tif_utils import (
     simulate_mock_multispec_data,
+    simulate_mock_binary_mask,
     load_tif_from_s3,
 )
 
@@ -88,13 +89,56 @@ def test_simulate_mock_multispec_data_unsupported_bit_depth() -> None:
         simulate_mock_multispec_data(3, 4, 5, bit_depth)
 
 
+def test_simulate_mock_binary_mask_success() -> None:
+    """
+    Test successful creation of a mock binary segmentation mask.
+    """
+    # Test parameters
+    n_y = np.random.randint(low=5, high=20)  # pylint: disable=no-member
+    n_x = np.random.randint(low=5, high=20)  # pylint: disable=no-member
+
+    # Call the test function.
+    mask_data_array = simulate_mock_binary_mask(n_y, n_x)
+
+    # Assertion
+    assert isinstance(mask_data_array, xr.DataArray)
+    assert mask_data_array.shape == (1, n_y, n_x)
+    assert mask_data_array.dtype == np.uint8
+
+    # Check range of data values.
+    assert np.min(mask_data_array.values) >= 0
+    assert np.min(mask_data_array.values) <= 1
+
+
+def test_simulate_mock_binary_mask_nonpositive_n_y() -> None:
+    """
+    Test the response of simulate_mock_binary_mask() to a non-positive n_y argument
+    """
+    with pytest.raises(
+        ValueError,
+        match="Number of pixels along y-dimension must be an integer greater than 0.",
+    ):
+        simulate_mock_binary_mask(-4, 5)
+
+
+def test_simulate_mock_binary_mask_nonpositive_n_x() -> None:
+    """
+    Test the response of simulate_mock_binary_mask() to a non-positive n_x argument
+    """
+    with pytest.raises(
+        ValueError,
+        match="Number of pixels along x-dimension must be an integer greater than 0.",
+    ):
+        simulate_mock_binary_mask(4, -5)
+
+
 @patch("rioxarray.open_rasterio")
 @patch("dagster_aws.s3.S3Resource")
 def test_load_tif_from_s3_success(
     mock_s3_resource: MagicMock, mock_open_rasterio: MagicMock
 ) -> None:
     """
-    Test successful execution of load_tif_from_s3()
+    Test successful execution of load_tif_from_s3().
     """
     # Create mock S3 client.
     mock_s3_client = MagicMock()

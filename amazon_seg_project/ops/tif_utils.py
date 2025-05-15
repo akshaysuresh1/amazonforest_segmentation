@@ -51,7 +51,7 @@ def simulate_mock_multispec_data(
         Supported values are integers 8, 16, 32, and 64."""
         )
 
-    # Simulate mock data as 3d numpy array of shape (n_bands, n_y, n_x).
+    # Simulate mock data as 3D NumPy array of shape (n_bands, n_y, n_x).
     data_type = bitdepths_to_dtype[bit_depth]
     data_vals = np.random.randint(  # pylint: disable=no-member
         low=0,
@@ -62,6 +62,42 @@ def simulate_mock_multispec_data(
 
     # Create coordinate arrays.
     band_coords = np.arange(n_bands)
+    y_coords = np.arange(n_y)
+    x_coords = np.arange(n_x)
+
+    # Build DataArray.
+    dims = ("band", "y", "x")
+    coords = {"band": band_coords, "y": y_coords, "x": x_coords}
+    data_array = xr.DataArray(data_vals, dims=dims, coords=coords)
+    return data_array
+
+
+@op(out=Out(dg_Any))
+def simulate_mock_binary_mask(n_y: int, n_x: int) -> xr.DataArray:
+    """
+    Simulate a binary segmentation mask read from a .tif file.
+
+    Assumption: Mask has only 1 color channel.
+    """
+    if not isinstance(n_y, int) or n_y < 1:
+        raise ValueError(
+            "Number of pixels along y-dimension must be an integer greater than 0."
+        )
+    if not isinstance(n_x, int) or n_x < 1:
+        raise ValueError(
+            "Number of pixels along x-dimension must be an integer greater than 0."
+        )
+
+    # Simulate mock data as 3D NumPy array of shape (1, n_y, n_x).
+    data_vals = np.random.randint(  # pylint: disable=no-member
+        low=0,
+        high=2,
+        size=(1, n_y, n_x),
+        dtype=np.uint8,  # type: ignore
+    )
+
+    # Create coordinate arrays.
+    band_coords = np.array([1])
     y_coords = np.arange(n_y)
     x_coords = np.arange(n_x)
 
