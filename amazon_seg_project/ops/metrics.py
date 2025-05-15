@@ -3,6 +3,8 @@ Metrics and loss functions for binary segmentation model performance evaluation
 """
 
 from typing import Dict
+import numpy as np
+import numpy.typing as npt
 import torch
 import segmentation_models_pytorch as smp
 from dagster import op, In, Out
@@ -60,6 +62,24 @@ def smp_metrics(
         "IoU": iou_score,
     }
     return results
+
+
+@op(ins={"precision": In(dg_Any), "recall": In(dg_Any)}, out=Out(dg_Any))
+def compute_f1_scores(
+    precision: npt.NDArray[np.float_], recall: npt.NDArray[np.float_]
+) -> npt.NDArray[np.float_]:
+    """
+    Compute an array of F1 scores from input precision and recall arrays.
+
+    Args:
+        precision: An array of precision values
+        recall: An array of recall values
+    """
+    if precision.shape != recall.shape:
+        raise ValueError("Precision and recall array have unequal shapes.")
+
+    f1_scores = 2.0 * precision * recall / (precision + recall)
+    return f1_scores
 
 
 @op(ins={"predicted": In(dg_Any), "target": In(dg_Any)}, out=Out(dg_Any))

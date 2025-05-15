@@ -6,12 +6,15 @@ from unittest.mock import patch, MagicMock
 from io import BytesIO
 import pytest
 import numpy as np
+import torch
 import boto3
 from moto import mock_aws
 from amazon_seg_project.ops.aug_utils import get_aug_pipeline
-from amazon_seg_project.ops.tif_utils import simulate_mock_multispec_data
+from amazon_seg_project.ops.tif_utils import (
+    simulate_mock_multispec_data,
+    simulate_mock_binary_mask,
+)
 from amazon_seg_project.assets import SegmentationDataset
-from amazon_seg_project.resources import torch
 
 
 @mock_aws
@@ -47,7 +50,7 @@ def test_seg_dataset_getitem_unequal_row_counts(mock_s3_resource: MagicMock) -> 
         )
 
         # Create and upload segmentation mask to S3 bucket.
-        mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=32, n_x=64)
+        mask_ds = simulate_mock_binary_mask(n_y=32, n_x=64)
         # Convert dataset to GeoTiff in memory.
         buffer = BytesIO()
         mask_ds.rio.to_raster(buffer, driver="GTiff")
@@ -100,7 +103,7 @@ def test_seg_dataset_getitem_unequal_column_counts(mock_s3_resource: MagicMock) 
         )
 
         # Create and upload segmentation mask to S3 bucket.
-        mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=64, n_x=32)
+        mask_ds = simulate_mock_binary_mask(n_y=64, n_x=32)
         # Convert dataset to GeoTiff in memory.
         buffer = BytesIO()
         mask_ds.rio.to_raster(buffer, driver="GTiff")
@@ -149,7 +152,7 @@ def test_seg_dataset_getitem_valid_without_aug(mock_s3_resource: MagicMock) -> N
     )
 
     # Create and upload segmentation mask to S3 bucket.
-    mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=64, n_x=64)
+    mask_ds = simulate_mock_binary_mask(n_y=64, n_x=64)
     # Convert dataset to GeoTiff in memory.
     buffer = BytesIO()
     mask_ds.rio.to_raster(buffer, driver="GTiff")
@@ -214,7 +217,7 @@ def test_seg_dataset_getitem_valid_horizontal_flip(mock_s3_resource: MagicMock) 
     )
 
     # Create and upload segmentation mask to S3 bucket.
-    mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=64, n_x=64)
+    mask_ds = simulate_mock_binary_mask(n_y=64, n_x=64)
     # Convert dataset to GeoTiff in memory.
     buffer = BytesIO()
     mask_ds.rio.to_raster(buffer, driver="GTiff")
@@ -224,7 +227,7 @@ def test_seg_dataset_getitem_valid_horizontal_flip(mock_s3_resource: MagicMock) 
         Bucket=s3_bucket, Key=masks_list[index], Body=buffer.getvalue()
     )
 
-    # Connect the mock Dagster AWS S3Resource to boto3 client
+    # Connect the mock Dagster AWS S3Resource to boto3 client.
     mock_s3_resource.get_client.return_value = s3_client
 
     # Expected results
@@ -286,7 +289,7 @@ def test_seg_dataset_getitem_valid_vertical_flip(mock_s3_resource: MagicMock) ->
     )
 
     # Create and upload segmentation mask to S3 bucket.
-    mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=64, n_x=64)
+    mask_ds = simulate_mock_binary_mask(n_y=64, n_x=64)
     # Convert dataset to GeoTiff in memory.
     buffer = BytesIO()
     mask_ds.rio.to_raster(buffer, driver="GTiff")
@@ -358,7 +361,7 @@ def test_seg_dataset_getitem_valid_rotate90_aug(mock_s3_resource: MagicMock) -> 
     )
 
     # Create and upload segmentation mask to S3 bucket.
-    mask_ds = simulate_mock_multispec_data(n_bands=1, n_y=64, n_x=64)
+    mask_ds = simulate_mock_binary_mask(n_y=64, n_x=64)
     # Convert dataset to GeoTiff in memory.
     buffer = BytesIO()
     mask_ds.rio.to_raster(buffer, driver="GTiff")

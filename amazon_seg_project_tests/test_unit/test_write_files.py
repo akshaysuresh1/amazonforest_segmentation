@@ -10,6 +10,7 @@ from amazon_seg_project.ops.write_files import (
     create_directories,
     write_stats_to_csv,
     write_loss_data_to_csv,
+    write_precision_recall_data,
 )
 
 
@@ -19,7 +20,7 @@ def test_create_directories_success_str(
     mock_logging: MagicMock, mock_makedirs: MagicMock
 ) -> None:
     """
-    Test successful execution of create_directories() with input string path
+    Test successful execution of create_directories() with input string path.
     """
     filepath = "folder1/folder2/file.txt"
     dirpath = "folder1/folder2"
@@ -41,7 +42,7 @@ def test_create_directories_success_path(
     mock_logging: MagicMock, mock_makedirs: MagicMock
 ) -> None:
     """
-    Test successful execution of create_directories() with input Path object
+    Test successful execution of create_directories() with input Path object.
     """
     filepath = Path("folder1/folder2/file.txt")
     dirpath = "folder1/folder2"
@@ -63,7 +64,7 @@ def test_create_directories_os_error(
     mock_logging: MagicMock, mock_makedirs: MagicMock
 ) -> None:
     """
-    Test correct raise of OSError by create_directories()
+    Test correct raise of OSError by create_directories().
     """
     with pytest.raises(OSError):
         filepath = Path("folder1/folder2/file.txt")
@@ -85,7 +86,7 @@ def test_write_stats_success_valid_filename(
     mock_df: MagicMock, mock_create_dirs: MagicMock
 ) -> None:
     """
-    Test successful execution of write_stats_to_csv() with valid filename
+    Test successful execution of write_stats_to_csv() with valid filename.
     """
     # Create mock inputs.
     means = np.array([1.0, 2.0, 3.0])
@@ -117,7 +118,7 @@ def test_write_stats_success_incomplete_filename(
     mock_df: MagicMock, mock_create_dirs: MagicMock
 ) -> None:
     """
-    Test successful execution of write_stats_to_csv() with incomplete filename
+    Test successful execution of write_stats_to_csv() with incomplete filename.
     """
     # Create mock inputs.
     means = np.array([1.0, 2.0, 3.0])
@@ -146,7 +147,7 @@ def test_write_stats_success_incomplete_filename(
 
 def test_write_stats_length_mismatch() -> None:
     """
-    Check for correct response of write_stats_to_csv() to inputs of unequal lengths
+    Check for correct response of write_stats_to_csv() to inputs of unequal lengths.
     """
     with pytest.raises(ValueError, match="Inputs do not have equal lengths."):
         means = np.zeros(4)
@@ -217,7 +218,7 @@ def test_write_loss_data_incomplete_filename(
     """
     Test successful execition of write_loss_data_to_csv().
 
-    Assumption: Input filename lacks .csv file extension
+    Assumption: Input filename lacks .csv file extension.
     """
     # Create mock inputs.
     mock_train_loss = [0.1, 0.2, 0.3]
@@ -262,7 +263,7 @@ def test_write_loss_data_incomplete_filename(
 
 def test_write_loss_data_length_mismatch() -> None:
     """
-    Check for correct response of write_stats() to inputs of unequal lengths
+    Check for correct response of write_stats() to inputs of unequal lengths.
     """
     with pytest.raises(ValueError, match="Input lists have different lengths."):
         mock_train_loss = [0.1, 0.2, 0.3]
@@ -270,3 +271,119 @@ def test_write_loss_data_length_mismatch() -> None:
         outcsv = Path("root_folder/subfolder/loss_curve_data.csv")
 
         write_loss_data_to_csv(mock_train_loss, mock_val_loss, outcsv)
+
+
+def test_write_precision_recall_data_unequal_input_shapes() -> None:
+    """
+    Test raise of ValueError() when input arrays have unequal lengths.
+    """
+    with pytest.raises(ValueError, match="Input arrays have unequal lengths."):
+        # Simulate test inputs.
+        precision_values = np.array([0.2, 0.6, 0.9])
+        recall_values = np.array([0.8, 0.6, 0.4, 0.3])
+        threshold_values = np.array([0.3, 0.5])
+        outcsv = Path("root_folder/subfolder/precision_recall_curve.csv")
+
+        # Call the test function.
+        write_precision_recall_data(
+            precision_values, recall_values, threshold_values, outcsv
+        )
+
+
+@patch("amazon_seg_project.ops.write_files.compute_f1_scores")
+@patch("amazon_seg_project.ops.write_files.create_directories")
+@patch("pandas.DataFrame")
+def test_write_precision_recall_data_incomplete_filename(
+    mock_df: MagicMock,
+    mock_create_dirs: MagicMock,
+    mock_compute_f1_scores: MagicMock,
+) -> None:
+    """
+    Test write_precision_recall_data() with outcsv lacking ".csv" extension.
+    """
+    # Simulate inputs.
+    precision_values = np.array([0.2, 0.6, 0.9])
+    recall_values = np.array([0.8, 0.6, 0.4])
+    threshold_values = np.array([0.3, 0.5, 0.7])
+    outcsv = Path("root_folder/subfolder/precision_recall_curve")
+    final_csv = str(outcsv) + ".csv"
+
+    # Set up mock dependencies.
+    mock_df_object = MagicMock(name="mock-dataframe")
+    mock_df.return_value = mock_df_object
+
+    # Call the test function.
+    write_precision_recall_data(
+        precision_values, recall_values, threshold_values, outcsv
+    )
+
+    # Assert for call to compute_f1_scores()
+    f1_args, _ = mock_compute_f1_scores.call_args
+    assert len(f1_args) == 2
+    np.testing.assert_array_equal(f1_args[0], precision_values)
+    np.testing.assert_array_equal(f1_args[1], recall_values)
+
+    # Assertion for DataFrame object creation
+    args, _ = mock_df.call_args
+    assert len(args) == 1
+    assert isinstance(args[0], dict)
+    np.testing.assert_array_equal(args[0]["Binarization threshold"], threshold_values)
+    np.testing.assert_array_equal(args[0]["Recall"], recall_values)
+    np.testing.assert_array_equal(args[0]["Precision"], precision_values)
+    np.testing.assert_array_equal(
+        args[0]["F1 score"], mock_compute_f1_scores.return_value
+    )
+
+    # Assertion for parent directory creation.
+    mock_create_dirs.assert_called_once_with(final_csv)
+    # Assert that to_csv() method of pd.DataFrame was called with the correct arguments.
+    mock_df_object.to_csv.assert_called_once_with(final_csv, index=False)
+
+
+@patch("amazon_seg_project.ops.write_files.compute_f1_scores")
+@patch("amazon_seg_project.ops.write_files.create_directories")
+@patch("pandas.DataFrame")
+def test_write_precision_recall_data_success(
+    mock_df: MagicMock,
+    mock_create_dirs: MagicMock,
+    mock_compute_f1_scores: MagicMock,
+) -> None:
+    """
+    Test write_precision_recall_data() for valid inputs.
+    """
+    # Simulate inputs.
+    precision_values = np.array([0.2, 0.6, 0.9])
+    recall_values = np.array([0.8, 0.6, 0.4])
+    threshold_values = np.array([0.3, 0.5, 0.7])
+    outcsv = Path("root_folder/subfolder/precision_recall_curve.csv")
+
+    # Set up mock dependencies.
+    mock_df_object = MagicMock(name="mock-dataframe")
+    mock_df.return_value = mock_df_object
+
+    # Call the test function.
+    write_precision_recall_data(
+        precision_values, recall_values, threshold_values, outcsv
+    )
+
+    # Assert for call to compute_f1_scores()
+    f1_args, _ = mock_compute_f1_scores.call_args
+    assert len(f1_args) == 2
+    np.testing.assert_array_equal(f1_args[0], precision_values)
+    np.testing.assert_array_equal(f1_args[1], recall_values)
+
+    # Assertion for DataFrame object creation
+    args, _ = mock_df.call_args
+    assert len(args) == 1
+    assert isinstance(args[0], dict)
+    np.testing.assert_array_equal(args[0]["Binarization threshold"], threshold_values)
+    np.testing.assert_array_equal(args[0]["Recall"], recall_values)
+    np.testing.assert_array_equal(args[0]["Precision"], precision_values)
+    np.testing.assert_array_equal(
+        args[0]["F1 score"], mock_compute_f1_scores.return_value
+    )
+
+    # Assertion for parent directory creation.
+    mock_create_dirs.assert_called_once_with(outcsv)
+    # Assert that to_csv() method of pd.DataFrame was called with the correct arguments.
+    mock_df_object.to_csv.assert_called_once_with(str(outcsv), index=False)

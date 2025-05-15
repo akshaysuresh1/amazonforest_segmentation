@@ -15,4 +15,8 @@ asset_selection = (
 compute_training_stats = define_asset_job(
     name="compute_training_stats",
     selection=asset_selection,
+    description="""
+    Calculate channel-wise mean and standard deviation across images training dataset.
+    Results get stored in a local .csv file.
+    """,
 )

@@ -5,6 +5,7 @@ Unit tests for short modules defined in amazon_seg_project.ops.torch_utils
 import os
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+import pytest
 import torch
 from torch import optim
 from torch.utils.data import Dataset, RandomSampler, SequentialSampler
@@ -13,6 +14,7 @@ from amazon_seg_project.ops.torch_utils import (
     create_data_loaders,
     setup_adam_w,
     save_model_weights,
+    apply_prob_thresholding,
 )
 from amazon_seg_project.ops.model_checks import are_state_dicts_equal
 
@@ -291,3 +293,66 @@ def test_save_model_weights_with_data_parallel(
 
     # Check for correct logging output.
     mock_logging.assert_called_once_with("Saved model weights to %s", complete_filepath)
+
+
+def test_prob_thresholding_tensor_max_gtr_than_one() -> None:
+    """
+    Check for correct raise of ValueError when prob_tensor.max() > 1.
+    """
+    with pytest.raises(
+        ValueError, match="Input tensor does not contain probabilities. Max value > 1."
+    ):
+        # Create inputs.
+        prob_tensor = torch.tensor([[1.0, 0.0], [1.6, 0.1]])
+        threshold_prob = 0.5
+
+        # Call the test function.
+        _ = apply_prob_thresholding(prob_tensor, threshold_prob=threshold_prob)
+
+
+def test_prob_thresholding_tensor_min_negative() -> None:
+    """
+    Check for correct raise of ValueError when prob_tensor.min() < 0.
+    """
+    with pytest.raises(
+        ValueError, match="Input tensor does not contain probabilities. Min value < 0."
+    ):
+        # Create inputs.
+        prob_tensor = torch.tensor([[1.0, 0.0], [0.6, -0.1]])
+        threshold_prob = 0.5
+
+        # Call the test function.
+        _ = apply_prob_thresholding(prob_tensor, threshold_prob=threshold_prob)
+
+
+def test_prob_thresholding_invalid_threshold() -> None:
+    """
+    Check for correct raise of ValueError when threshold is not a probability.
+    """
+    with pytest.raises(ValueError, match="Threshold value must be a probability."):
+        # Create inputs.
+        prob_tensor = torch.tensor([[1.0, 0.0], [0.6, 0.1]])
+        threshold_prob = -0.5
+
+        # Call the test function.
+        _ = apply_prob_thresholding(prob_tensor, threshold_prob=threshold_prob)
+
+
+def test_prob_thresholding_success() -> None:
+    """
+    Test for successful execution of apply_prob_thresholding()
+    """
+    # Create inputs.
+    prob_tensor = torch.tensor([[1.0, 0.1], [0.4, 0.7]])
+    threshold_prob = 0.5
+    expected_tensor = torch.tensor([[1, 0], [0, 1]]).int()
+
+    # Call the test function.
+    thresholded_binary_tensor = apply_prob_thresholding(
+        prob_tensor, threshold_prob=threshold_prob
+    )
+
+    # Assertion
+    assert torch.equal(expected_tensor, thresholded_binary_tensor), (
+        "Thresholded tensor does not match expected output."
+    )
