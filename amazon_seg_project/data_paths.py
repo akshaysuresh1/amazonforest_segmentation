@@ -12,8 +12,9 @@ TRAINING_MASKS_PREFIX = Path("train") / "masks"
 VALIDATION_IMAGES_PREFIX = Path("validation") / "images"
 VALIDATION_MASKS_PREFIX = Path("validation") / "masks"
 
-# Paths to test images on S3 buckket
+# Paths to test images on S3 bucket
 TEST_IMAGES_PREFIX = Path("test") / "images"
+TEST_MASKS_PREFIX = Path("test") / "masks"
 
 # Output products (to be saved locally)
 OUTPUT_PATH = Path("outputs")
