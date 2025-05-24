@@ -175,7 +175,7 @@ def test_testdata_success(mock_load_labeled_data: MagicMock) -> None:
     """
     # Mock outputs
     mock_test_image_files = ["test/images/file1.tif", "test/images/file2.tif"]
-    mock_test_mask_files = ["val/masks/file1.tif", "val/masks/file2.tif"]
+    mock_test_mask_files = ["test/masks/file1.tif", "test/masks/file2.tif"]
     mock_load_labeled_data.return_value = mock_test_image_files
     mock_load_labeled_data.return_value = (
         mock_test_image_files,
