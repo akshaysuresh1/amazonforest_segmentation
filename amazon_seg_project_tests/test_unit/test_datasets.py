@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 from amazon_seg_project.assets import (
     afs_training_dataset,
     afs_validation_dataset,
+    afs_test_dataset,
 )
 from amazon_seg_project.ops.scaling_utils import robust_scaling
 from amazon_seg_project.resources import AMAZON_TIF_BUCKET
@@ -18,7 +19,7 @@ def test_afs_training_dataset_success(
     mock_get_aug_pipeline: MagicMock, mock_seg_dataset: MagicMock
 ) -> None:
     """
-    Test successful initialization of training dataset
+    Test successful initialization of training dataset.
     """
     # Define mock config and inputs.
     config = TrainingDatasetConfig(
@@ -62,16 +63,16 @@ def test_afs_training_dataset_success(
     # Assertions for output
     assert len(output) == 1, f"Expected 1 output, found {len(output)} output(s)."
     assert output[0].value == mock_train_dataset
-    assert output[0].metadata.get("Training dataset length").value == len(
+    assert output[0].metadata.get("Training dataset size").value == len(
         mock_train_dataset
-    ), f"""Expected training dataset length = {len(mock_train_dataset)},
-        Actual dataset length = {output[0].metadata.get("Training dataset length").value}"""
+    ), f"""Expected training dataset size = {len(mock_train_dataset)},
+        Actual dataset size = {output[0].metadata.get("Training dataset size").value}"""
 
 
 @patch("amazon_seg_project.assets.datasets.SegmentationDataset")
 def test_afs_validation_dataset_success(mock_seg_dataset: MagicMock) -> None:
     """
-    Test successful initialization of validation dataset
+    Test successful initialization of validation dataset.
     """
     # Define mock config and inputs.
     mock_val_image_files = ["val/images/file1.tif", "val/images/file2.tif"]
@@ -98,7 +99,43 @@ def test_afs_validation_dataset_success(mock_seg_dataset: MagicMock) -> None:
     # Assertions for output
     assert len(output) == 1, f"Expected 1 output, found {len(output)} output(s)."
     assert output[0].value == mock_val_dataset
-    assert output[0].metadata.get("Validation dataset length").value == len(
+    assert output[0].metadata.get("Validation dataset size").value == len(
         mock_val_dataset
-    ), f"""Expected validation dataset length = {len(mock_val_dataset)},
-        Actual dataset length = {output[0].metadata.get("Validation dataset length").value}"""
+    ), f"""Expected validation dataset size = {len(mock_val_dataset)},
+        Actual dataset size = {output[0].metadata.get("Validation dataset size").value}"""
+
+
+@patch("amazon_seg_project.assets.datasets.SegmentationDataset")
+def test_afs_test_dataset_success(mock_seg_dataset: MagicMock) -> None:
+    """
+    Verify successful initialization of test dataset.
+    """
+    # Define mock config and inputs.
+    mock_test_image_files = ["test/images/file1.tif", "test/images/file2.tif"]
+    mock_test_mask_files = ["test/masks/file1.tif", "test/masks/file2.tif"]
+    # Set up mock output.
+    mock_test_dataset = MagicMock()
+    mock_test_dataset.__len__.return_value = len(mock_test_image_files)
+    mock_seg_dataset.return_value = mock_test_dataset
+
+    # Call the test function.
+    output_generator = afs_test_dataset(mock_test_image_files, mock_test_mask_files)
+    # Exhaust the generator into a list.
+    output = list(output_generator)  # type: ignore
+
+    # Assertion for mocked SegmentationDataset class
+    mock_seg_dataset.assert_called_once_with(
+        images_list=mock_test_image_files,
+        masks_list=mock_test_mask_files,
+        s3_bucket=AMAZON_TIF_BUCKET.get_value() or "",
+        scaling_func=robust_scaling,
+        transform=None,
+    )
+
+    # Assertions for output
+    assert len(output) == 1, f"Expected 1 output, found {len(output)} output(s)."
+    assert output[0].value == mock_test_dataset
+    assert output[0].metadata.get("Test dataset size").value == len(
+        mock_test_dataset
+    ), f"""Expected test dataset size = {len(mock_test_dataset)},
+        Actual dataset size = {output[0].metadata.get("Test dataset size").value}"""
