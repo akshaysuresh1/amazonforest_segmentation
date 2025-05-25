@@ -26,7 +26,7 @@ def precision_recall_curve(
     trained_unet_model: torch.nn.Module,
 ) -> pd.DataFrame:
     """
-    Pandas DataFrame object storing precision-recall curve data points
+    Precision-recall curve at different binarization thresholds for validation dataset
     """
     # Arrays to store precision and recall estimates at different thresholds
     threshold_values = np.array(config.thresholds_list)

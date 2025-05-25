@@ -1,8 +1,8 @@
 """
-Unit test for asset "precision_recall_curve"
+Unit tests for metrics computed on validation dataset
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from io import BytesIO
 import numpy as np
 import pandas as pd
@@ -19,10 +19,10 @@ from amazon_seg_project.data_paths import OUTPUT_PATH
 
 
 @mock_aws
-@patch("amazon_seg_project.assets.precision_recall_metrics.plot_precision_recall_curve")
-@patch("amazon_seg_project.assets.precision_recall_metrics.write_precision_recall_data")
-@patch("amazon_seg_project.assets.precision_recall_metrics.compute_f1_scores")
-@patch("amazon_seg_project.assets.precision_recall_metrics.smp_metrics")
+@patch("amazon_seg_project.assets.val_dataset_metrics.plot_precision_recall_curve")
+@patch("amazon_seg_project.assets.val_dataset_metrics.write_precision_recall_data")
+@patch("amazon_seg_project.assets.val_dataset_metrics.compute_f1_scores")
+@patch("amazon_seg_project.assets.val_dataset_metrics.smp_metrics")
 @patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 @patch("logging.info")
 def test_precision_recall_curve_execution(
@@ -127,9 +127,13 @@ def test_precision_recall_curve_execution(
 
     # Assertion for write_precision_recall_data()
     write_prec_recall_data_args, _ = mock_write_precision_recall_data.call_args
-    np.testing.assert_array_almost_equal(write_prec_recall_data_args[0], precision_values)
+    np.testing.assert_array_almost_equal(
+        write_prec_recall_data_args[0], precision_values
+    )
     np.testing.assert_array_almost_equal(write_prec_recall_data_args[1], recall_values)
-    np.testing.assert_array_almost_equal(write_prec_recall_data_args[2], threshold_values)
+    np.testing.assert_array_almost_equal(
+        write_prec_recall_data_args[2], threshold_values
+    )
     assert (
         write_prec_recall_data_args[3] == OUTPUT_PATH / "val_precision_recall_curve.csv"
     )
@@ -138,9 +142,24 @@ def test_precision_recall_curve_execution(
     plot_prec_recall_curve_args, plot_prec_recall_curve_kwargs = (
         mock_plot_precision_recall_curve.call_args
     )
-    np.testing.assert_array_almost_equal(plot_prec_recall_curve_args[0], precision_values)
+    np.testing.assert_array_almost_equal(
+        plot_prec_recall_curve_args[0], precision_values
+    )
     np.testing.assert_array_almost_equal(plot_prec_recall_curve_args[1], recall_values)
-    np.testing.assert_array_almost_equal(plot_prec_recall_curve_args[2], threshold_values)
+    np.testing.assert_array_almost_equal(
+        plot_prec_recall_curve_args[2], threshold_values
+    )
     assert plot_prec_recall_curve_kwargs["n_positive_samples"] == n_positive_samples
     assert plot_prec_recall_curve_kwargs["n_samples"] == n_samples
     assert plot_prec_recall_curve_kwargs["basename"] == str(OUTPUT_PATH / "val")
+
+    # Logging assertions
+    calls = [
+        call(
+            f"Computing precision-recall curve over validation dataset of length {len(val_dataset)}"
+        ),
+        call("Writing precision-recall curve data points to disk"),
+        call("Plotting precision-recall curve"),
+        call("Precision-recall curve generated for validation dataset."),
+    ]
+    mock_logging.assert_has_calls(calls)
