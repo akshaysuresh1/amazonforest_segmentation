@@ -213,13 +213,16 @@ def plot_precision_recall_curve(
         raise ValueError(
             "Precision, recall, and threshold arrays must have the same length."
         )
+    
+    # Axes limit
+    xmin = np.floor(np.min(recall_vals) / 0.05) * 0.05
+    xmax = 1.0
+    ymin = 0.0
+    ymax = 1.05
 
     # F1 scores
     f1_scores = compute_f1_scores(precision_vals, recall_vals)
     max_f1_idx = np.argmax(f1_scores)
-
-    # Area under precision-recall curve
-    pr_auc = abs(np.trapz(precision_vals, recall_vals))
 
     # Prepare segments for color-coding
     points = np.array([recall_vals, precision_vals]).T.reshape(-1, 1, 2)
@@ -236,26 +239,19 @@ def plot_precision_recall_curve(
     # Add dotted line for baseline model.
     if n_samples is not None and n_positive_samples is not None:
         baseline_precision = n_positive_samples / n_samples
-        ax.hlines(y=baseline_precision, xmin=0, xmax=1, linestyle=":", color="k")
+        ax.hlines(y=baseline_precision, xmin=xmin, xmax=1, linestyle=":", color="k")
         ax.annotate(
             "Baseline always positive model",
-            xy=(0.2, baseline_precision + 0.01),
+            xy=(0.5 * (xmin + xmax), baseline_precision + 0.01),
+            horizontalalignment="center",
+            verticalalignment="bottom",
             xycoords="data",
             fontsize=12,
         )
     # Create colored line for precision-recall curve.
     line = ax.add_collection(lc)
     fig.colorbar(line, ax=ax, label="Threshold")
-    # Add annotation for area under curve computed using trapezoidal rule.
-    ax.annotate(
-        f"AUC = {pr_auc:.3f}",
-        xy=(0.3, 0.8),
-        xycoords="data",
-        fontsize=12,
-        ha="right",
-        va="bottom",
-        bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
-    )
+
     # Add marker for data point with the highest F1 score.
     ax.plot(
         recall_vals[max_f1_idx],
@@ -267,11 +263,13 @@ def plot_precision_recall_curve(
         linestyle="None",
     )
     # Set axes limits.
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1.05)
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
     # Set axes labels.
     ax.set_xlabel("Recall", fontsize=12)
     ax.set_ylabel("Precision", fontsize=12)
+    # Show grid and set tight layout.
+    ax.grid(visible=True, linestyle=":", color="gray")
     plt.tight_layout()
     # Save and close the figure.
     plt.savefig(basename + "_precision_recall_curve.png")
