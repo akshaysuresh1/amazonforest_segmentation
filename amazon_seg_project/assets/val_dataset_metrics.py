@@ -36,10 +36,11 @@ def precision_recall_curve(
     """
     Precision-recall curve at different binarization thresholds for validation dataset
     """
-    # Arrays to store precision and recall estimates at different thresholds
+    # Arrays to store precision, recall, and IoU estimates at different thresholds
     threshold_values = np.array(config.thresholds_list)
     precision_values = np.zeros(len(threshold_values))
     recall_values = np.zeros(len(threshold_values))
+    iou_values = np.zeros(len(threshold_values))
 
     # Length of validation dataset
     len_val_dset = len(validation_dataset)
@@ -75,10 +76,12 @@ def precision_recall_curve(
             )
             precision_values[thresh_idx] += results.get("Precision")
             recall_values[thresh_idx] += results.get("Recall")
+            iou_values[thresh_idx] += results.get("IoU")
 
     # Obtain average precision and recall across validation dataset.
     precision_values /= len_val_dset
     recall_values /= len_val_dset
+    iou_values /= len_val_dset
 
     # Write precision and recall arrays to disk.
     logging.info("Writing precision-recall curve data points to disk")
@@ -86,6 +89,7 @@ def precision_recall_curve(
         precision_values,
         recall_values,
         threshold_values,
+        iou_values,
         OUTPUT_PATH / "val_precision_recall_curve.csv",
     )
 
@@ -106,6 +110,7 @@ def precision_recall_curve(
         "Recall": recall_values,
         "Precision": precision_values,
         "F1 score": compute_f1_scores(precision_values, recall_values),
+        "IoU": iou_values,
     }
     logging.info("Precision-recall curve generated for validation dataset.")
     return output

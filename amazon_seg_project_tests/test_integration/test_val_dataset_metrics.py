@@ -97,7 +97,7 @@ def test_precision_recall_curve_execution(
     val_dataset = SegmentationDataset(images_list, masks_list, s3_bucket)
 
     # Return fixed outputs from mocked functions for metric computation
-    mock_smp_metrics.return_value = {"Precision": 0.6, "Recall": 0.4}
+    mock_smp_metrics.return_value = {"Precision": 0.6, "Recall": 0.4, "IoU": 0.7}
     mock_compute_f1_scores.return_value = np.array(
         [0.48] * len(test_config.thresholds_list)
     )
@@ -113,11 +113,15 @@ def test_precision_recall_curve_execution(
     precision_values = np.array(
         [mock_smp_metrics.return_value.get("Precision")] * len(threshold_values)
     )
+    iou_values = np.array(
+        [mock_smp_metrics.return_value.get("IoU")] * len(threshold_values)
+    )
     expected_dict = {
         "Binarization threshold": threshold_values,
         "Recall": recall_values,
         "Precision": precision_values,
         "F1 score": mock_compute_f1_scores.return_value,
+        "IoU": iou_values,
     }
 
     # Assertions for output dictionary
@@ -135,8 +139,9 @@ def test_precision_recall_curve_execution(
     np.testing.assert_array_almost_equal(
         write_prec_recall_data_args[2], threshold_values
     )
+    np.testing.assert_array_almost_equal(write_prec_recall_data_args[3], iou_values)
     assert (
-        write_prec_recall_data_args[3] == OUTPUT_PATH / "val_precision_recall_curve.csv"
+        write_prec_recall_data_args[4] == OUTPUT_PATH / "val_precision_recall_curve.csv"
     )
 
     # Assertion for plot_precision_recall_curve()

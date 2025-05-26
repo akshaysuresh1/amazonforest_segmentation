@@ -137,6 +137,7 @@ def write_loss_data_to_csv(
         "precision": In(dg_Any),
         "recall": In(dg_Any),
         "threshold": In(dg_Any),
+        "iou": In(dg_Any),
         "outcsv": In(dg_Any),
     }
 )
@@ -144,6 +145,7 @@ def write_precision_recall_data(
     precision: npt.NDArray[np.float_],
     recall: npt.NDArray[np.float_],
     threshold: npt.NDArray[np.float_],
+    iou: npt.NDArray[np.float_],
     outcsv: Union[str, os.PathLike],
 ) -> None:
     """
@@ -153,9 +155,10 @@ def write_precision_recall_data(
         precision: Precision values at different binarization thresholds
         recall: Recall values at different binarization thresholds
         threshold: Binarization thresholds
+        iou: IoU values at different binarization thresholds
         outcsv: Name (including path) of .csv file to be saved
     """
-    if not len(precision) == len(recall) == len(threshold):
+    if not len(precision) == len(recall) == len(threshold) == len(iou):
         raise ValueError("Input arrays have unequal lengths.")
 
     # Append .csv extension if not found at end of file name.
@@ -169,6 +172,7 @@ def write_precision_recall_data(
             "Recall": recall,
             "Precision": precision,
             "F1 score": f1_scores,
+            "IoU": iou,
         }
     )
 
