@@ -184,7 +184,6 @@ def validation_metrics(
             recall=results.get("Recall"),
             iou_value=results.get("IoU"),
         )
-        break
 
     # Build output dictionary.
     output = {
