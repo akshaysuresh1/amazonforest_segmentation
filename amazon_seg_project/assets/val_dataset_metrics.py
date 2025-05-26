@@ -149,6 +149,7 @@ def validation_metrics(
     f1_score_values = np.zeros(len_val_dataset)
     iou_score_values = np.zeros(len_val_dataset)
 
+    trained_unet_model.eval()
     # Create a DataLoader object for validation dataset.
     val_loader = DataLoader(validation_dataset, batch_size=1, shuffle=False)
     # Loop over validation dataset.
