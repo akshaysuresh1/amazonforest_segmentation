@@ -38,9 +38,9 @@ def precision_recall_curve(
     """
     # Arrays to store precision, recall, and IoU estimates at different thresholds
     threshold_values = np.array(config.thresholds_list)
-    precision_values = np.zeros(len(threshold_values))
-    recall_values = np.zeros(len(threshold_values))
-    iou_values = np.zeros(len(threshold_values))
+    precision_values = np.zeros_like(threshold_values)
+    recall_values = np.zeros_like(threshold_values)
+    iou_values = np.zeros_like(threshold_values)
 
     # Length of validation dataset
     len_val_dset = len(validation_dataset)
