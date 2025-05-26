@@ -10,7 +10,7 @@ from moto import mock_aws
 from segmentation_models_pytorch import Unet
 from amazon_seg_project.assets import (
     precision_recall_curve,
-    validation_metrics,
+    afs_validation_metrics,
     SegmentationDataset,
 )
 from amazon_seg_project.config import PrecRecallCurveConfig, ModelEvaluationConfig
@@ -184,7 +184,7 @@ def test_precision_recall_curve_execution(
 @patch("amazon_seg_project.assets.performance_metrics_validation.create_directories")
 @patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 @patch("logging.info")
-def test_validation_metrics_computation(
+def test_afs_validation_metrics_computation(
     mock_logging: MagicMock,
     mock_s3_resource: MagicMock,
     mock_create_directories: MagicMock,
@@ -258,7 +258,7 @@ def test_validation_metrics_computation(
     }
 
     # Call the test function.
-    output_dict = validation_metrics(test_config, val_dataset, model)
+    output_dict = afs_validation_metrics(test_config, val_dataset, model)
 
     # Assertions for output dictionary
     assert isinstance(output_dict, dict)
@@ -271,7 +271,7 @@ def test_validation_metrics_computation(
 
     # Assertion for output base path creation
     mock_create_directories.assert_called_once_with(
-        OUTPUT_PATH / "val_plots" / "val_index"
+        OUTPUT_PATH / "val_dataset_plots" / "val_data_index"
     )
 
     # Assertions for calls to visualize_and_save_model_predictions()
@@ -279,7 +279,7 @@ def test_validation_metrics_computation(
         ANY,  # image_plot
         ANY,  # ground_truth_mask_plot
         ANY,  # predicted_mask_plot
-        basename=str(OUTPUT_PATH / "val_plots" / f"val_index{index:03d}"),
+        basename=str(OUTPUT_PATH / "val_dataset_plots" / f"val_data_index{index:03d}"),
         accuracy=mock_smp_metrics.return_value.get("Accuracy"),
         precision=mock_smp_metrics.return_value.get("Precision"),
         recall=mock_smp_metrics.return_value.get("Recall"),
@@ -289,7 +289,10 @@ def test_validation_metrics_computation(
     # Assertion for write_dict_to_csv()
     mock_write_dict_to_csv.assert_called_once_with(
         output_dict,
-        str(OUTPUT_PATH / f"val_metrics_threshold_{test_config.threshold:.2f}.csv"),
+        str(
+            OUTPUT_PATH
+            / f"val_dataset_metrics_threshold_{test_config.threshold:.2f}.csv"
+        ),
     )
     # Logging assertions
     calls = [

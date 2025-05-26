@@ -120,7 +120,7 @@ def precision_recall_curve(
     name="validation_metrics",
     ins={"validation_dataset": AssetIn(), "trained_unet_model": AssetIn()},
 )
-def validation_metrics(
+def afs_validation_metrics(
     config: ModelEvaluationConfig,
     validation_dataset: SegmentationDataset,
     trained_unet_model: torch.nn.Module,
@@ -138,7 +138,7 @@ def validation_metrics(
     Returns: Metrics for every image in validation dataset
     """
     len_val_dataset = len(validation_dataset)
-    plot_basename = OUTPUT_PATH / "val_plots" / "val_index"
+    plot_basename = OUTPUT_PATH / "val_dataset_plots" / "val_data_index"
     # Create parent directories of plotting directory if non-existent.
     create_directories(plot_basename)
 
@@ -200,7 +200,8 @@ def validation_metrics(
         "IoU": iou_score_values,
     }
     write_dict_to_csv(
-        output, str(OUTPUT_PATH / f"val_metrics_threshold_{config.threshold:.2f}.csv")
+        output,
+        str(OUTPUT_PATH / f"val_dataset_metrics_threshold_{config.threshold:.2f}.csv"),
     )
     logging.info("Metrics computed for validation dataset.")
     return output
