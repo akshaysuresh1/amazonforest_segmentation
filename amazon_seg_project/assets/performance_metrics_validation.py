@@ -36,10 +36,11 @@ def precision_recall_curve(
     """
     Precision-recall curve at different binarization thresholds for validation dataset
     """
-    # Arrays to store precision and recall estimates at different thresholds
+    # Arrays to store precision, recall, and IoU estimates at different thresholds
     threshold_values = np.array(config.thresholds_list)
-    precision_values = np.zeros(len(threshold_values))
-    recall_values = np.zeros(len(threshold_values))
+    precision_values = np.zeros_like(threshold_values)
+    recall_values = np.zeros_like(threshold_values)
+    iou_values = np.zeros_like(threshold_values)
 
     # Length of validation dataset
     len_val_dset = len(validation_dataset)
@@ -75,10 +76,12 @@ def precision_recall_curve(
             )
             precision_values[thresh_idx] += results.get("Precision")
             recall_values[thresh_idx] += results.get("Recall")
+            iou_values[thresh_idx] += results.get("IoU")
 
     # Obtain average precision and recall across validation dataset.
     precision_values /= len_val_dset
     recall_values /= len_val_dset
+    iou_values /= len_val_dset
 
     # Write precision and recall arrays to disk.
     logging.info("Writing precision-recall curve data points to disk")
@@ -86,6 +89,7 @@ def precision_recall_curve(
         precision_values,
         recall_values,
         threshold_values,
+        iou_values,
         OUTPUT_PATH / "val_precision_recall_curve.csv",
     )
 
@@ -106,6 +110,7 @@ def precision_recall_curve(
         "Recall": recall_values,
         "Precision": precision_values,
         "F1 score": compute_f1_scores(precision_values, recall_values),
+        "IoU": iou_values,
     }
     logging.info("Precision-recall curve generated for validation dataset.")
     return output
@@ -115,7 +120,7 @@ def precision_recall_curve(
     name="validation_metrics",
     ins={"validation_dataset": AssetIn(), "trained_unet_model": AssetIn()},
 )
-def validation_metrics(
+def afs_validation_metrics(
     config: ModelEvaluationConfig,
     validation_dataset: SegmentationDataset,
     trained_unet_model: torch.nn.Module,
@@ -133,7 +138,7 @@ def validation_metrics(
     Returns: Metrics for every image in validation dataset
     """
     len_val_dataset = len(validation_dataset)
-    plot_basename = OUTPUT_PATH / "val_plots" / "val_index"
+    plot_basename = OUTPUT_PATH / "val_dataset_plots" / "val_data_index"
     # Create parent directories of plotting directory if non-existent.
     create_directories(plot_basename)
 
@@ -144,6 +149,7 @@ def validation_metrics(
     f1_score_values = np.zeros(len_val_dataset)
     iou_score_values = np.zeros(len_val_dataset)
 
+    trained_unet_model.eval()
     # Create a DataLoader object for validation dataset.
     val_loader = DataLoader(validation_dataset, batch_size=1, shuffle=False)
     # Loop over validation dataset.
@@ -194,7 +200,8 @@ def validation_metrics(
         "IoU": iou_score_values,
     }
     write_dict_to_csv(
-        output, str(OUTPUT_PATH / f"val_metrics_threshold_{config.threshold:.2f}.csv")
+        output,
+        str(OUTPUT_PATH / f"val_dataset_metrics_threshold_{config.threshold:.2f}.csv"),
     )
     logging.info("Metrics computed for validation dataset.")
     return output

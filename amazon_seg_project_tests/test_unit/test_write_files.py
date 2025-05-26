@@ -334,11 +334,12 @@ def test_write_precision_recall_data_unequal_input_shapes() -> None:
         precision_values = np.array([0.2, 0.6, 0.9])
         recall_values = np.array([0.8, 0.6, 0.4, 0.3])
         threshold_values = np.array([0.3, 0.5])
+        iou_values = np.array([0.4, 0.6, 0.5])
         outcsv = Path("root_folder/subfolder/precision_recall_curve.csv")
 
         # Call the test function.
         write_precision_recall_data(
-            precision_values, recall_values, threshold_values, outcsv
+            precision_values, recall_values, threshold_values, iou_values, outcsv
         )
 
 
@@ -357,6 +358,7 @@ def test_write_precision_recall_data_incomplete_filename(
     precision_values = np.array([0.2, 0.6, 0.9])
     recall_values = np.array([0.8, 0.6, 0.4])
     threshold_values = np.array([0.3, 0.5, 0.7])
+    iou_values = np.array([0.4, 0.6, 0.5])
     outcsv = Path("root_folder/subfolder/precision_recall_curve")
     final_csv = str(outcsv) + ".csv"
 
@@ -366,7 +368,7 @@ def test_write_precision_recall_data_incomplete_filename(
 
     # Call the test function.
     write_precision_recall_data(
-        precision_values, recall_values, threshold_values, outcsv
+        precision_values, recall_values, threshold_values, iou_values, outcsv
     )
 
     # Assert for call to compute_f1_scores()
@@ -385,6 +387,7 @@ def test_write_precision_recall_data_incomplete_filename(
     np.testing.assert_array_equal(
         args[0]["F1 score"], mock_compute_f1_scores.return_value
     )
+    np.testing.assert_array_equal(args[0]["IoU"], iou_values)
 
     # Assertion for parent directory creation.
     mock_create_dirs.assert_called_once_with(final_csv)
@@ -407,6 +410,7 @@ def test_write_precision_recall_data_success(
     precision_values = np.array([0.2, 0.6, 0.9])
     recall_values = np.array([0.8, 0.6, 0.4])
     threshold_values = np.array([0.3, 0.5, 0.7])
+    iou_values = np.array([0.4, 0.6, 0.5])
     outcsv = Path("root_folder/subfolder/precision_recall_curve.csv")
 
     # Set up mock dependencies.
@@ -415,7 +419,7 @@ def test_write_precision_recall_data_success(
 
     # Call the test function.
     write_precision_recall_data(
-        precision_values, recall_values, threshold_values, outcsv
+        precision_values, recall_values, threshold_values, iou_values, outcsv
     )
 
     # Assert for call to compute_f1_scores()
@@ -434,6 +438,7 @@ def test_write_precision_recall_data_success(
     np.testing.assert_array_equal(
         args[0]["F1 score"], mock_compute_f1_scores.return_value
     )
+    np.testing.assert_array_equal(args[0]["IoU"], iou_values)
 
     # Assertion for parent directory creation.
     mock_create_dirs.assert_called_once_with(outcsv)
