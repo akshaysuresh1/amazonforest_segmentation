@@ -13,6 +13,7 @@ from .assets import (
 )
 from .resources import s3_resource
 from .jobs import (
+    compute_test_dataset_metrics,
     compute_val_metrics,
     compute_val_precision_recall_curve,
     compute_training_stats,
@@ -33,6 +34,7 @@ all_assets = [*data_assets, *stats_assets, *model_assets, *result_assets]
 
 # Jobs
 all_jobs = [
+    compute_test_dataset_metrics,
     compute_val_metrics,
     compute_val_precision_recall_curve,
     compute_training_stats,
