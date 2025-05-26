@@ -372,11 +372,14 @@ def test_plot_precision_recall_curve_execution(
     n_samples = 100
     basename = "test_plot"
 
+    # Axes limits
+    xmin = np.floor(np.min(recall_vals) / 0.05) * 0.05
+    xmax, ymin, ymax = 1.0, 0.0, 1.05
+
     # Expected intermediate compute products
     points = np.array([recall_vals, precision_vals]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     baseline_precision = n_positive_samples / n_samples
-    pr_auc = abs(np.trapz(precision_vals, recall_vals))
 
     # Set up mock dependencies.
     mock_fig = MagicMock(name="mock-figure")
@@ -412,27 +415,19 @@ def test_plot_precision_recall_curve_execution(
     mock_plt_subplots.assert_called_once_with(nrows=1, ncols=1, figsize=(6, 5))
     # Dotted line for baseline always positive model
     mock_ax.hlines.assert_called_once_with(
-        y=baseline_precision, xmin=0, xmax=1, linestyle=":", color="k"
+        y=baseline_precision, xmin=xmin, xmax=1, linestyle=":", color="k"
     )
     mock_ax.annotate.assert_any_call(
         "Baseline always positive model",
-        xy=(0.2, baseline_precision + 0.01),
+        xy=(0.5 * (xmin + xmax), baseline_precision + 0.01),
+        horizontalalignment="center",
+        verticalalignment="bottom",
         xycoords="data",
         fontsize=12,
     )
     # Assertion for colored line creation in ax.
     mock_ax.add_collection.assert_called_once_with(mock_lc)
     mock_fig.colorbar.assert_called_once_with(mock_line, ax=mock_ax, label="Threshold")
-    # Annotation for AUC
-    mock_ax.annotate.assert_any_call(
-        f"AUC = {pr_auc:.3f}",
-        xy=(0.3, 0.8),
-        xycoords="data",
-        fontsize=12,
-        ha="right",
-        va="bottom",
-        bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.3),
-    )
     # Assertion for plotting marker at data point with the highest F1 score
     mock_ax.plot.assert_called_once_with(
         recall_vals[max_f1_idx],
@@ -444,11 +439,13 @@ def test_plot_precision_recall_curve_execution(
         linestyle="None",
     )
     # Assertion for axes limits
-    mock_ax.set_xlim.assert_called_once_with(0, 1)
-    mock_ax.set_ylim.assert_called_once_with(0, 1.05)
+    mock_ax.set_xlim.assert_called_once_with(xmin, xmax)
+    mock_ax.set_ylim.assert_called_once_with(ymin, ymax)
     # Assertion for axes labels
     mock_ax.set_xlabel.assert_called_once_with("Recall", fontsize=12)
     mock_ax.set_ylabel.assert_called_once_with("Precision", fontsize=12)
+    # Assertion for grid visibility
+    mock_ax.grid.assert_called_once_with(visible=True, linestyle=":", color="gray")
     # Check for a single call of plt.tight_layout().
     mock_plt_tight_layout.assert_called_once()
     # Assert for saving and closing figure.

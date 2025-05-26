@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 from amazon_seg_project.ops.write_files import (
     create_directories,
+    write_dict_to_csv,
     write_stats_to_csv,
     write_loss_data_to_csv,
     write_precision_recall_data,
@@ -78,6 +79,57 @@ def test_create_directories_os_error(
     mock_logging.assert_called_once_with(
         "Error creating directories for %s: %s", str(filepath), e
     )
+
+
+@patch("amazon_seg_project.ops.write_files.create_directories")
+@patch("pandas.DataFrame")
+def test_write_dict_to_csv_valid_filename(
+    mock_df: MagicMock, mock_create_dirs: MagicMock
+) -> None:
+    """
+    Test successful execution of write_stats_to_csv() with valid CSV extension.
+    """
+    # Create mock inputs.
+    input_dict = {"Color": ["Red", "Green", "Blue"], "Version": 1.1}
+    outcsv = Path("folder1/folder2/outfile.csv")
+
+    # Mock DataFrame object
+    mock_df_instance = MagicMock()
+    mock_df.return_value = mock_df_instance
+
+    # Call test function.
+    write_dict_to_csv(input_dict, outcsv)
+
+    # Assertions
+    mock_create_dirs.assert_called_once_with(outcsv)
+    mock_df.assert_called_once_with(input_dict)
+    mock_df_instance.to_csv.assert_called_once_with(str(outcsv), index=False)
+
+
+@patch("amazon_seg_project.ops.write_files.create_directories")
+@patch("pandas.DataFrame")
+def test_write_dict_to_csv_missing_file_extension(
+    mock_df: MagicMock, mock_create_dirs: MagicMock
+) -> None:
+    """
+    Test successful execution of write_stats_to_csv() with missing CSV extension.
+    """
+    # Create mock inputs.
+    input_dict = {"Color": ["Red", "Green", "Blue"], "Version": 1.1}
+    outcsv = Path("folder1/folder2/outfile")
+    final_csv = str(outcsv) + ".csv"
+
+    # Mock DataFrame object
+    mock_df_instance = MagicMock()
+    mock_df.return_value = mock_df_instance
+
+    # Call test function.
+    write_dict_to_csv(input_dict, outcsv)
+
+    # Assertions
+    mock_create_dirs.assert_called_once_with(final_csv)
+    mock_df.assert_called_once_with(input_dict)
+    mock_df_instance.to_csv.assert_called_once_with(final_csv, index=False)
 
 
 @patch("amazon_seg_project.ops.write_files.create_directories")

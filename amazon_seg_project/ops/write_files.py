@@ -4,7 +4,7 @@ Utility functions to write intermediate output files locally
 
 import os
 import logging
-from typing import List, Union
+from typing import Dict, List, Union, Any
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -29,6 +29,30 @@ def create_directories(filepath: Union[str, os.PathLike]) -> None:
         logging.error("Error creating directories for %s: %s", str(filepath), str(e))
         # Re-raise OSError exception.
         raise
+
+
+@op(ins={"dictionary": In(dg_Any), "outcsv": In(dg_Any)})
+def write_dict_to_csv(
+    dictionary: Dict[str, Any], outcsv: Union[str, os.PathLike]
+) -> None:
+    """
+    Write the contents of a dictionary to a .csv file.
+
+    Args:
+        dictionary: Input dict object
+        outcsv: Name (including path) of output .csv file
+    """
+    # Append .csv extension if not found at end of file name.
+    if not str(outcsv).endswith(".csv"):
+        outcsv = str(outcsv) + ".csv"
+
+    # Create parent directories if non-existent.
+    create_directories(outcsv)
+
+    # Create pandas DataFrame object from input dictionary.
+    df = pd.DataFrame(dictionary)
+    # Write pandas DataFrame to "outcsv".
+    df.to_csv(str(outcsv), index=False)
 
 
 @op(
@@ -67,7 +91,7 @@ def write_stats_to_csv(
     # Create parent directories if non-existent.
     create_directories(outcsv)
 
-    # Write Pandas DataFrame to "outcsv".
+    # Write pandas DataFrame to "outcsv".
     df.to_csv(str(outcsv), index=False)
 
 

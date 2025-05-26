@@ -77,3 +77,12 @@ class PrecRecallCurveConfig(Config):
     thresholds_list: List[float] = Field(
         default=[1.0e-6, 1.0e-3] + np.arange(0.05, 1.05, 0.05).round(2).tolist()
     )  # Use small values in place of 0 to accommodate numerical uncertainty.
+
+
+class ModelEvaluationConfig(Config):
+    """
+    Hyperparameters supplied during model evaluation
+    """
+
+    # Binarization threshold
+    threshold: float = Field(default=0.5)
