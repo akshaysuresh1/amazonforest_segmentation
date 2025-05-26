@@ -3,7 +3,7 @@ Dagster definitions
 """
 
 from dagster import Definitions, load_assets_from_modules
-from .assets import data_products, datasets, model, val_dataset_metrics, statistics
+from .assets import data_products, datasets, model, performance_metrics_validation, statistics
 from .resources import s3_resource
 from .jobs import (
     compute_val_metrics,
@@ -16,7 +16,7 @@ from .jobs import (
 data_assets = load_assets_from_modules([data_products, datasets], group_name="data")
 stats_assets = load_assets_from_modules([statistics], group_name="stats")
 model_assets = load_assets_from_modules([model], group_name="model")
-result_assets = load_assets_from_modules([val_dataset_metrics], group_name="results")
+result_assets = load_assets_from_modules([performance_metrics_validation], group_name="results")
 
 # Combine all assets into a list.
 all_assets = [*data_assets, *stats_assets, *model_assets, *result_assets]

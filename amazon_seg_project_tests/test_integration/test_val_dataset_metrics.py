@@ -1,5 +1,5 @@
 """
-Unit tests for metrics computed on validation dataset
+Unit tests for performance metrics computed on validation dataset
 """
 
 from unittest.mock import patch, MagicMock, call, ANY
@@ -22,10 +22,14 @@ from amazon_seg_project.data_paths import OUTPUT_PATH
 
 
 @mock_aws
-@patch("amazon_seg_project.assets.val_dataset_metrics.plot_precision_recall_curve")
-@patch("amazon_seg_project.assets.val_dataset_metrics.write_precision_recall_data")
-@patch("amazon_seg_project.assets.val_dataset_metrics.compute_f1_scores")
-@patch("amazon_seg_project.assets.val_dataset_metrics.smp_metrics")
+@patch(
+    "amazon_seg_project.assets.performance_metrics_validation.plot_precision_recall_curve"
+)
+@patch(
+    "amazon_seg_project.assets.performance_metrics_validation.write_precision_recall_data"
+)
+@patch("amazon_seg_project.assets.performance_metrics_validation.compute_f1_scores")
+@patch("amazon_seg_project.assets.performance_metrics_validation.smp_metrics")
 @patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 @patch("logging.info")
 def test_precision_recall_curve_execution(
@@ -172,12 +176,12 @@ def test_precision_recall_curve_execution(
 
 
 @mock_aws
-@patch("amazon_seg_project.assets.val_dataset_metrics.write_dict_to_csv")
+@patch("amazon_seg_project.assets.performance_metrics_validation.write_dict_to_csv")
 @patch(
-    "amazon_seg_project.assets.val_dataset_metrics.visualize_and_save_model_predictions"
+    "amazon_seg_project.assets.performance_metrics_validation.visualize_and_save_model_predictions"
 )
-@patch("amazon_seg_project.assets.val_dataset_metrics.smp_metrics")
-@patch("amazon_seg_project.assets.val_dataset_metrics.create_directories")
+@patch("amazon_seg_project.assets.performance_metrics_validation.smp_metrics")
+@patch("amazon_seg_project.assets.performance_metrics_validation.create_directories")
 @patch("amazon_seg_project.assets.dataset_definition.s3_resource")
 @patch("logging.info")
 def test_validation_metrics_computation(
